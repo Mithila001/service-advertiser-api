@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: service-advertiser
+  datasource:
+    url: jdbc:postgresql://localhost:5433/service_advertiser
+    username: dev_user123
+    password: dev_user123
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
