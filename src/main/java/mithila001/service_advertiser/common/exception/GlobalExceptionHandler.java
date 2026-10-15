@@ -1,0 +1,82 @@
+package mithila001.service_advertiser.common.exception;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.hibernate.exception.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String EMAIL_UNIQUE_CONSTRAINT = "users_email_key";
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        exception.getBindingResult().getFieldErrors().forEach(error -> {
+            if (!fieldErrors.containsKey(error.getField()) || "NotBlank".equals(error.getCode())) {
+                fieldErrors.put(error.getField(), error.getDefaultMessage());
+            }
+        });
+
+        return response(HttpStatus.BAD_REQUEST, "Validation Failed", "Invalid registration data", fieldErrors);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException exception) {
+        return response(HttpStatus.BAD_REQUEST, "Bad Request", "Malformed JSON request", Map.of());
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateEmail(DuplicateEmailException exception) {
+        return response(HttpStatus.CONFLICT, "Conflict", exception.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRole(RoleNotFoundException exception) {
+        log.error("Registration role is missing", exception);
+        return internalError();
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(Exception exception) {
+        if (hasEmailUniqueConstraint(exception)) {
+            return response(HttpStatus.CONFLICT, "Conflict", "Email is already registered", Map.of());
+        }
+
+        log.error("Unexpected API error", exception);
+        return internalError();
+    }
+
+    private static boolean hasEmailUniqueConstraint(Throwable exception) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ConstraintViolationException violation
+                    && EMAIL_UNIQUE_CONSTRAINT.equals(violation.getConstraintName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static ResponseEntity<ErrorResponse> internalError() {
+        return response(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
+                "Registration is temporarily unavailable", Map.of());
+    }
+
+    private static ResponseEntity<ErrorResponse> response(
+            HttpStatus status, String error, String message, Map<String, String> fieldErrors) {
+        return ResponseEntity.status(status)
+                .body(new ErrorResponse(status.value(), error, message, fieldErrors));
+    }
+
+    public record ErrorResponse(int status, String error, String message, Map<String, String> fieldErrors) {
+    }
+}
