@@ -1,0 +1,138 @@
+package mithila001.service_advertiser.auth;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import mithila001.service_advertiser.auth.dto.LoginRequest;
+import mithila001.service_advertiser.auth.dto.TokenResponse;
+import mithila001.service_advertiser.user.User;
+import mithila001.service_advertiser.user.UserRepository;
+import mithila001.service_advertiser.user.UserStatus;
+
+@Service
+public class AuthenticationService {
+    private final UserRepository users;
+    private final PasswordEncoder passwords;
+    private final JdbcTemplate jdbc;
+    private final JwtEncoder encoder;
+    private final AuthProperties properties;
+    private final Clock clock;
+    private final SecureRandom random = new SecureRandom();
+    private final String dummyHash;
+
+    public AuthenticationService(UserRepository users, PasswordEncoder passwords, JdbcTemplate jdbc,
+                                 JwtEncoder encoder, AuthProperties properties, Clock clock) {
+        this.users = users;
+        this.passwords = passwords;
+        this.jdbc = jdbc;
+        this.encoder = encoder;
+        this.properties = properties;
+        this.clock = clock;
+        this.dummyHash = passwords.encode(UUID.randomUUID().toString());
+    }
+
+    @Transactional
+    public TokenResponse login(LoginRequest request) {
+        User user = users.findByEmail(request.email().trim().toLowerCase(Locale.ROOT)).orElse(null);
+        boolean matches = passwords.matches(request.password(), user == null ? dummyHash : user.getPasswordHash());
+        if (!matches || user == null || user.getStatus() != UserStatus.ACTIVE) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
+        Instant now = clock.instant();
+        Instant refreshExpiry = now.plus(properties.refreshLifetime());
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        String refreshToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        jdbc.update("""
+                INSERT INTO refresh_tokens (user_id, family_id, token_hash, created_at, expires_at)
+                VALUES (?, ?, ?, ?, ?)
+                """, user.getId(), UUID.randomUUID(), hash(refreshToken), Timestamp.from(now), Timestamp.from(refreshExpiry));
+        return issue(user, refreshToken, now, refreshExpiry);
+    }
+
+    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
+    public TokenResponse refresh(String rawToken) {
+        String hash = hash(rawToken);
+        StoredToken initial = find(hash).orElseThrow(InvalidRefreshTokenException::new);
+        // ponytail: serialize this user's refresh/logout operations; lock per session if contention grows.
+        User user = users.findForUpdate(initial.userId()).orElseThrow(InvalidRefreshTokenException::new);
+        StoredToken token = find(hash).orElseThrow(InvalidRefreshTokenException::new);
+        Instant now = clock.instant();
+        // Reject tokens consumed by the previous rotation implementation; never reactivate them.
+        if (token.revokedAt() != null || token.usedAt() != null || !token.expiresAt().isAfter(now)) {
+            throw new InvalidRefreshTokenException();
+        }
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            revoke(token.familyId(), now);
+            // Commit inactive-account revocation even though the API returns 401.
+            throw new InvalidRefreshTokenException();
+        }
+        return issue(user, rawToken, now, token.expiresAt());
+    }
+
+    @Transactional
+    public void logout(String rawToken) {
+        Optional<StoredToken> initial = find(hash(rawToken));
+        if (initial.isPresent() && users.findForUpdate(initial.get().userId()).isPresent()) {
+            revoke(initial.get().familyId(), clock.instant());
+        }
+    }
+
+    @Scheduled(cron = "0 0 3 * * *", zone = "UTC")
+    @Transactional
+    public void deleteExpiredTokens() {
+        jdbc.update("DELETE FROM refresh_tokens WHERE expires_at <= ?", Timestamp.from(clock.instant()));
+    }
+
+    private TokenResponse issue(User user, String refreshToken, Instant now, Instant refreshExpiry) {
+        JwtClaimsSet claims = JwtClaimsSet.builder().subject(user.getId().toString())
+                .issuer(properties.issuer()).audience(java.util.List.of(properties.audience()))
+                .issuedAt(now).expiresAt(now.plus(properties.accessLifetime()))
+                .claim("role", user.getRole().getName().name()).build();
+        String accessToken = encoder.encode(JwtEncoderParameters.from(
+                JwsHeader.with(MacAlgorithm.HS256).type("JWT").build(), claims)).getTokenValue();
+        return new TokenResponse(accessToken, "Bearer", properties.accessLifetime().toSeconds(), refreshToken, refreshExpiry);
+    }
+
+    private Optional<StoredToken> find(String hash) {
+        return jdbc.query("SELECT user_id, family_id, expires_at, used_at, revoked_at FROM refresh_tokens WHERE token_hash = ?",
+                (rs, row) -> new StoredToken(rs.getLong("user_id"), rs.getObject("family_id", UUID.class),
+                        rs.getTimestamp("expires_at").toInstant(), rs.getTimestamp("used_at"), rs.getTimestamp("revoked_at")),
+                hash).stream().findFirst();
+    }
+
+    private void revoke(UUID familyId, Instant now) {
+        jdbc.update("UPDATE refresh_tokens SET revoked_at = ? WHERE family_id = ? AND revoked_at IS NULL",
+                Timestamp.from(now), familyId);
+    }
+
+    private static String hash(String token) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
+    }
+
+    private record StoredToken(long userId, UUID familyId, Instant expiresAt, Timestamp usedAt, Timestamp revokedAt) {}
+}

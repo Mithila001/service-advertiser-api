@@ -10,4 +10,8 @@ public record RegisterRequest(
         @Email(message = "Must be a valid email address")
         @Size(max = 255, message = "Must be at most 255 characters") String email,
         @NotBlank(message = "Password is required") @Size(min = 8, message = "Must be at least 8 characters") String password) {
+    @Override
+    public String toString() {
+        return "RegisterRequest[REDACTED]";
+    }
 }

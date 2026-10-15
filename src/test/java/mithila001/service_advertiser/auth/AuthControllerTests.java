@@ -34,6 +34,12 @@ class AuthControllerTests {
     @MockitoBean
     private RegistrationService registrationService;
 
+    @MockitoBean
+    private AuthenticationService authenticationService;
+
+    @MockitoBean
+    private org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder;
+
     @Test
     void publicRegistrationReturnsCreatedResponseWithoutPassword() throws Exception {
         when(registrationService.register(any(RegisterRequest.class))).thenReturn(
@@ -95,6 +101,6 @@ class AuthControllerTests {
     @Test
     void otherEndpointsRequireAuthentication() throws Exception {
         mockMvc.perform(get("/api/v1/private"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

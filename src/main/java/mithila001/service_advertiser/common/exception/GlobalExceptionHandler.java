@@ -12,6 +12,9 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.access.AccessDeniedException;
+import mithila001.service_advertiser.auth.InvalidRefreshTokenException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -27,12 +30,22 @@ public class GlobalExceptionHandler {
             }
         });
 
-        return response(HttpStatus.BAD_REQUEST, "Validation Failed", "Invalid registration data", fieldErrors);
+        return response(HttpStatus.BAD_REQUEST, "Validation Failed", "Invalid request data", fieldErrors);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException exception) {
         return response(HttpStatus.BAD_REQUEST, "Bad Request", "Malformed JSON request", Map.of());
+    }
+
+    @ExceptionHandler({ BadCredentialsException.class, InvalidRefreshTokenException.class })
+    public ResponseEntity<ErrorResponse> handleAuthentication(RuntimeException exception) {
+        return response(HttpStatus.UNAUTHORIZED, "Unauthorized", exception.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException exception) {
+        return response(HttpStatus.FORBIDDEN, "Forbidden", "Access denied", Map.of());
     }
 
     @ExceptionHandler(DuplicateEmailException.class)
@@ -68,7 +81,7 @@ public class GlobalExceptionHandler {
 
     private static ResponseEntity<ErrorResponse> internalError() {
         return response(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
-                "Registration is temporarily unavailable", Map.of());
+                "Service is temporarily unavailable", Map.of());
     }
 
     private static ResponseEntity<ErrorResponse> response(

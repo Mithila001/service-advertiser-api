@@ -13,7 +13,7 @@ class GlobalExceptionHandlerTests {
                 .handleUnexpected(new IllegalStateException("internal SQL and stack detail"));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Registration is temporarily unavailable", response.getBody().message());
+        assertEquals("Service is temporarily unavailable", response.getBody().message());
         assertFalse(response.getBody().toString().contains("internal SQL"));
     }
 }

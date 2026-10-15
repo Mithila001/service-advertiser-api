@@ -1,12 +1,22 @@
 spring:
+  config:
+    import: "optional:file:./.env[.properties]"
   application:
     name: service-advertiser
   datasource:
-    url: jdbc:postgresql://localhost:5433/service_advertiser
-    username: dev_user123
-    password: dev_user123
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/service_advertiser}
+    username: ${SPRING_DATASOURCE_USERNAME:dev_user123}
+    password: ${SPRING_DATASOURCE_PASSWORD:dev_user123}
   jpa:
     hibernate:
       ddl-auto: validate
   flyway:
     enabled: true
+
+app:
+  auth:
+    secret-base64: ${JWT_SECRET_BASE64:}
+    issuer: ${JWT_ISSUER:service-advertiser}
+    audience: ${JWT_AUDIENCE:service-advertiser-api}
+    access-lifetime: ${JWT_ACCESS_LIFETIME:15m}
+    refresh-lifetime: ${JWT_REFRESH_LIFETIME:7d}
