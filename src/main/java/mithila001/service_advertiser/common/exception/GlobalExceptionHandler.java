@@ -33,6 +33,12 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.BAD_REQUEST, "Validation Failed", "Invalid request data", fieldErrors);
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidParameter(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException exception) {
+        return response(HttpStatus.BAD_REQUEST, "Bad Request", "Invalid request parameter", Map.of());
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedJson(HttpMessageNotReadableException exception) {
         return response(HttpStatus.BAD_REQUEST, "Bad Request", "Malformed JSON request", Map.of());

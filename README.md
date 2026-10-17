@@ -173,4 +173,51 @@ account states/registration roles return 403.
 
 Migration V3 preserves existing businesses, assigns `legacy_business_<id>` unique
 names, and fills missing/blank cities with `Unknown`. Applied migrations are unchanged.
-Items and item deletion will be implemented in Phase 2; no item tables exist yet.
+Migration V4 adds items with a business foreign key using `ON DELETE CASCADE`.
+
+## Item management
+
+| Method | Endpoint | Behavior |
+| --- | --- | --- |
+| POST | `/api/v1/businesses/me/items` | Create an ACTIVE item; returns 201 |
+| GET | `/api/v1/businesses/me/items` | Own items, including inactive, ordered by ID |
+| PATCH | `/api/v1/items/{id}` | Partially update your item |
+| DELETE | `/api/v1/items/{id}` | Permanently delete your item; returns 204 |
+| GET | `/api/v1/items/{id}` | Public active item detail |
+| GET | `/api/v1/businesses/{uniqueName}/items?page=0&size=10` | Public active items |
+
+Create example:
+
+```json
+{"title":"Home cleaning","type":"SERVICE","description":"Two hours","price":2500.00}
+```
+
+Title (up to 150 characters) and type (`PRODUCT` or `SERVICE`) are required.
+Description and price are optional. Price uses a nonnegative decimal with up to
+17 integer digits and two fractional digits. Null price means unspecified; zero
+means free. Client-supplied business IDs do not control ownership. New items
+always start ACTIVE.
+
+PATCH accepts `title`, `description`, `type`, `price`, and `status` (`ACTIVE` or
+`INACTIVE`). Omitted fields are preserved. Explicit null clears description or
+price; null title, type, or status is invalid. Example:
+
+```json
+{"status":"INACTIVE","price":null}
+```
+
+Protected item endpoints check the current account, PROVIDER role, and business
+ownership in the database. Creation, updates, and deletion require an ACTIVE
+business. Suspended or disabled businesses may still list their own items.
+Other businesses' item IDs return 404 for updates/deletion. Public detail returns
+404 unless both item and business are ACTIVE.
+
+Public lists return `content`, `page`, `size`, `totalElements`, and `totalPages`.
+Page numbering starts at zero; size must be 1?100. Results are ordered by item ID.
+Unknown, suspended, or disabled businesses produce an empty public list.
+
+`app.items.max-per-business` (environment variable `ITEMS_MAX_PER_BUSINESS`)
+defaults to 10 and must be positive. Both ACTIVE and INACTIVE items count. Requests
+at the limit return 409. The owner-row database lock serializes creation and
+business deletion; deleting an item frees a slot. Deleting a business permanently
+removes all its items while retaining the user and authentication sessions.

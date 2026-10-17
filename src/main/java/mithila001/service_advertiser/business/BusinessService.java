@@ -74,6 +74,14 @@ public class BusinessService {
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Business not found")));
     }
 
+    public Business providerBusiness(Long userId) {
+        User user = activeUser(userId);
+        if (user.getRole().getName() != UserRole.PROVIDER) {
+            throw new AccessDeniedException("Only providers can manage items");
+        }
+        return ownedBusiness(user);
+    }
+
     private User activeUser(Long userId) {
         User user = users.findForUpdate(userId).orElseThrow(() -> new AccessDeniedException("Access denied"));
         if (user.getStatus() != UserStatus.ACTIVE) {

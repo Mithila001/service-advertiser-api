@@ -14,6 +14,8 @@ spring:
     enabled: true
 
 app:
+  items:
+    max-per-business: ${ITEMS_MAX_PER_BUSINESS:10}
   auth:
     secret-base64: ${JWT_SECRET_BASE64:}
     issuer: ${JWT_ISSUER:service-advertiser}
