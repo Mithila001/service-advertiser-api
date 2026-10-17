@@ -108,7 +108,8 @@ Logout returns `204` even for unknown or previously revoked well-formed tokens.
 It revokes that session's refresh tokens and leaves other devices logged in.
 Delete the tokens from client storage after logout. Existing access JWTs remain
 valid until expiry, at most 15 minutes by default. Account suspension and role
-changes also take effect for bearer access when tokens expire; login and refresh
+changes also take effect for general bearer access when tokens expire; business endpoints
+check current account state and ownership in the database on every protected request. Login and refresh
 always check the current account state and issue the current role.
 
 Invalid request data returns `400`; invalid credentials or refresh tokens return
@@ -127,3 +128,49 @@ Run `mvn test`. Integration tests require Docker and create an isolated PostgreS
 JWT secret or your development database. Coverage includes JWT validation, API
 errors, registration, refresh token rotation and reuse detection, signing failures,
 concurrent refresh, independent sessions, legacy-token rejection, and expiry cleanup.
+
+## Business management
+
+| Method | Endpoint | Behavior |
+| --- | --- | --- |
+| POST | `/api/v1/businesses` | Register a business; returns 201 |
+| GET | `/api/v1/businesses/me` | Retrieve your business |
+| PUT | `/api/v1/businesses/me` | Replace editable business information |
+| DELETE | `/api/v1/businesses/me` | Permanently delete your business; returns 204 |
+| GET | `/api/v1/businesses/{uniqueName}` | Public profile; no authentication required |
+
+Registration example (requires a customer access JWT):
+
+```json
+{
+  "uniqueName": "colombo_services",
+  "information": {
+    "name": "Colombo Services",
+    "city": "Colombo",
+    "description": "Local services",
+    "phone": "+94112345678"
+  }
+}
+```
+
+`uniqueName` accepts 3?50 lowercase ASCII letters, numbers, or underscores and
+cannot be changed. Display names may repeat. `information` also accepts `email`,
+`websiteUrl`, `addressLine1`, `addressLine2`, `district`, `province`, `postalCode`,
+`latitude`, `longitude`, and `logoUrl` (an existing URL field; no upload endpoint).
+Coordinates are optional and limited to latitude ?90 and longitude ?180, with
+up to seven fractional digits. Responses contain `id`, `uniqueName`, `information`,
+`status`, `createdAt`, and `updatedAt`.
+
+PUT takes the `information` object directly; name and city are required and omitted
+optional fields are cleared. Unique name, status, IDs, and timestamps are not editable.
+Registration creates an ACTIVE business and switches CUSTOMER to PROVIDER atomically.
+Deletion clears ownership and switches back to CUSTOMER atomically, preserving the
+account and authentication sessions. Refresh or log in to obtain the current JWT role;
+existing JWTs can still access your business based on current database ownership.
+Only active accounts can register or manage businesses. Missing own/public profiles
+return 404; duplicate unique names or a second registration return 409; disallowed
+account states/registration roles return 403.
+
+Migration V3 preserves existing businesses, assigns `legacy_business_<id>` unique
+names, and fills missing/blank cities with `Unknown`. Applied migrations are unchanged.
+Items and item deletion will be implemented in Phase 2; no item tables exist yet.

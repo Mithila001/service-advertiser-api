@@ -59,8 +59,20 @@ public class GlobalExceptionHandler {
         return internalError();
     }
 
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleStatus(org.springframework.web.server.ResponseStatusException exception) {
+        HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
+        return response(status, status.getReasonPhrase(), exception.getReason(), Map.of());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception exception) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ConstraintViolationException violation
+                    && "business_unique_name_key".equals(violation.getConstraintName())) {
+                return response(HttpStatus.CONFLICT, "Conflict", "Business unique name is already registered", Map.of());
+            }
+        }
         if (hasEmailUniqueConstraint(exception)) {
             return response(HttpStatus.CONFLICT, "Conflict", "Email is already registered", Map.of());
         }

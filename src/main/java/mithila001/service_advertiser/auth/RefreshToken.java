@@ -23,6 +23,7 @@ public class RefreshToken {
     @Column(name = "family_id", nullable = false)
     private UUID familyId;
 
+    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.CHAR)
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash;
 
