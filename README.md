@@ -82,19 +82,20 @@ Content-Type: application/json
 {"refreshToken":"<current refresh token>"}
 ```
 
-Refresh returns a new access JWT and echoes the same refresh token and its original
-expiry using the response fields shown above. Replace the stored access JWT; keep
-using the same refresh token until it expires or is revoked. A session expires seven
+Refresh returns a new access JWT and a new refresh token with the original session
+expiry using the response fields shown above. Replace both stored tokens after each
+successful refresh. A session expires seven
 days after login by default; refreshing does not extend that deadline. Once the
 refresh token expires, log in again. Only SHA-256 hashes of refresh tokens are
 persisted. Every login creates a separate session.
 
-Refresh tokens are reusable, including across concurrent refresh requests. Refreshing
-does not consume the token or insert another database record. Previously consumed
-tokens from the older rotation implementation remain invalid; use the latest active
-token or log in again. The database retains the existing `used_at` column for this
-compatibility check. Reuse detection applies only to those legacy consumed tokens;
-repeated use of a current token does not revoke its session.
+Each refresh token can be used once. A successful refresh marks it as consumed and
+stores the replacement token's hash in the same session. Reusing a consumed token
+returns `401` and revokes the entire session's refresh tokens, including its newest
+replacement. Other login sessions remain active. Serialize refresh requests on the
+client: concurrent requests with the same token trigger reuse detection and require
+logging in again. If a refresh response is lost, retrying its consumed token also
+requires logging in again.
 
 ```http
 POST /api/v1/auth/logout
@@ -124,5 +125,5 @@ cookies or permissive CORS rules are configured.
 Run `mvn test`. Integration tests require Docker and create an isolated PostgreSQL
 18 container. Tests supply a test-only signing key and do not require a production
 JWT secret or your development database. Coverage includes JWT validation, API
-errors, registration, reusable refresh tokens, signing failures,
+errors, registration, refresh token rotation and reuse detection, signing failures,
 concurrent refresh, independent sessions, legacy-token rejection, and expiry cleanup.

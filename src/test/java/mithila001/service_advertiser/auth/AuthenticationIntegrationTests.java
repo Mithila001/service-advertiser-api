@@ -134,30 +134,50 @@ class AuthenticationIntegrationTests extends PostgresTestSupport {
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
                 .andReturn().getResponse().getContentAsString();
         TokenResponse next = mapper.readValue(body, TokenResponse.class);
-        assertEquals(first.refreshToken(), next.refreshToken());
+        assertNotEquals(first.refreshToken(), next.refreshToken());
+        assertTrue(next.refreshToken().matches("[A-Za-z0-9_-]{43}"));
         assertNotEquals(first.accessToken(), next.accessToken());
         assertEquals(first.refreshTokenExpiresAt(), next.refreshTokenExpiresAt());
         assertEquals(userId(email).toString(), decoder.decode(next.accessToken()).getSubject());
-        assertEquals(1, count(email));
-        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM refresh_tokens WHERE user_id = ? AND used_at IS NOT NULL", Integer.class, userId(email)));
+        assertEquals(2, count(email));
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM refresh_tokens WHERE user_id = ? AND used_at IS NOT NULL", Integer.class, userId(email)));
+        mvc.perform(post("/api/v1/auth/refresh").contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("refreshToken", first.refreshToken()))))
+                .andExpect(status().isUnauthorized());
+        assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(next.refreshToken()));
     }
 
     @Test
-    void sameRefreshTokenCanBeReusedUntilItsOriginalExpiry() {
+    void rotatesRefreshTokensWithoutExtendingOriginalExpiry() {
         String email = register();
         TokenResponse first = login(email);
         TokenResponse otherDevice = login(email);
+        TokenResponse current = first;
         for (long minutes : new long[] { 16, 32, 7 * 24 * 60 - 1 }) {
             when(clock.instant()).thenReturn(NOW.plus(Duration.ofMinutes(minutes)));
-            TokenResponse next = service.refresh(first.refreshToken());
-            assertEquals(first.refreshToken(), next.refreshToken());
+            TokenResponse next = service.refresh(current.refreshToken());
+            assertNotEquals(current.refreshToken(), next.refreshToken());
             assertEquals(first.refreshTokenExpiresAt(), next.refreshTokenExpiresAt());
+            current = next;
         }
-        assertEquals(2, count(email));
+        assertEquals(5, count(email));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM refresh_tokens WHERE user_id = ? AND revoked_at IS NOT NULL", Integer.class, userId(email)));
         assertNotNull(service.refresh(otherDevice.refreshToken()));
         when(clock.instant()).thenReturn(first.refreshTokenExpiresAt());
+        String expiredToken = current.refreshToken();
+        assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(expiredToken));
+    }
+
+    @Test
+    void replayRevokesRotatedDescendantsButPreservesOtherSessions() {
+        String email = register();
+        TokenResponse first = login(email);
+        TokenResponse otherDevice = login(email);
+        TokenResponse next = service.refresh(first.refreshToken());
+        TokenResponse latest = service.refresh(next.refreshToken());
         assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(first.refreshToken()));
+        assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(latest.refreshToken()));
+        assertNotNull(service.refresh(otherDevice.refreshToken()));
     }
 
     @Test
@@ -165,12 +185,14 @@ class AuthenticationIntegrationTests extends PostgresTestSupport {
         String email = register();
         TokenResponse first = login(email);
         TokenResponse other = login(email);
+        TokenResponse rotated = service.refresh(first.refreshToken());
         for (String token : new String[] { first.refreshToken(), first.refreshToken(), "a".repeat(43) }) {
             mvc.perform(post("/api/v1/auth/logout").contentType(MediaType.APPLICATION_JSON)
                             .content(json(Map.of("refreshToken", token))))
                     .andExpect(status().isNoContent()).andExpect(content().string(""));
         }
         assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(first.refreshToken()));
+        assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(rotated.refreshToken()));
         mvc.perform(get("/test/identity").header("Authorization", "Bearer " + first.accessToken()))
                 .andExpect(status().isOk());
         assertNotNull(service.refresh(other.refreshToken()));
@@ -197,14 +219,14 @@ class AuthenticationIntegrationTests extends PostgresTestSupport {
     void expiryAndCleanupPreserveActiveSessions() {
         String email = register();
         TokenResponse expired = login(email);
-        service.refresh(expired.refreshToken());
+        TokenResponse expiredNext = service.refresh(expired.refreshToken());
         when(clock.instant()).thenReturn(NOW.plus(Duration.ofDays(7)));
-        assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(expired.refreshToken()));
+        assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(expiredNext.refreshToken()));
         TokenResponse active = login(email);
-        service.refresh(active.refreshToken());
+        TokenResponse activeNext = service.refresh(active.refreshToken());
         service.deleteExpiredTokens();
-        assertEquals(1, count(email));
-        assertEquals(active.refreshToken(), service.refresh(active.refreshToken()).refreshToken());
+        assertEquals(2, count(email));
+        assertNotEquals(activeNext.refreshToken(), service.refresh(activeNext.refreshToken()).refreshToken());
     }
 
     @Test
@@ -216,11 +238,11 @@ class AuthenticationIntegrationTests extends PostgresTestSupport {
         assertEquals(1, count(email));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM refresh_tokens WHERE user_id = ? AND used_at IS NOT NULL", Integer.class, userId(email)));
         org.mockito.Mockito.doCallRealMethod().when(encoder).encode(any());
-        assertEquals(first.refreshToken(), service.refresh(first.refreshToken()).refreshToken());
+        assertNotEquals(first.refreshToken(), service.refresh(first.refreshToken()).refreshToken());
     }
 
     @Test
-    void concurrentRefreshRequestsBothSucceedWithoutChangingRefreshToken() throws Exception {
+    void concurrentRefreshOnlySucceedsOnceAndReplayRevokesSession() throws Exception {
         String email = register();
         TokenResponse first = login(email);
         CountDownLatch ready = new CountDownLatch(2);
@@ -228,7 +250,11 @@ class AuthenticationIntegrationTests extends PostgresTestSupport {
         java.util.concurrent.Callable<TokenResponse> refresh = () -> {
             ready.countDown();
             assertTrue(start.await(10, TimeUnit.SECONDS));
-            return service.refresh(first.refreshToken());
+            try {
+                return service.refresh(first.refreshToken());
+            } catch (InvalidRefreshTokenException exception) {
+                return null;
+            }
         };
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var left = executor.submit(refresh);
@@ -237,12 +263,12 @@ class AuthenticationIntegrationTests extends PostgresTestSupport {
             start.countDown();
             TokenResponse a = left.get(15, TimeUnit.SECONDS);
             TokenResponse b = right.get(15, TimeUnit.SECONDS);
-            assertEquals(first.refreshToken(), a.refreshToken());
-            assertEquals(first.refreshToken(), b.refreshToken());
-            assertEquals(first.refreshTokenExpiresAt(), a.refreshTokenExpiresAt());
-            assertEquals(first.refreshTokenExpiresAt(), b.refreshTokenExpiresAt());
-            assertEquals(1, count(email));
-            assertNotNull(service.refresh(first.refreshToken()));
+            assertTrue((a == null) != (b == null), "Exactly one refresh must succeed");
+            TokenResponse winner = a == null ? b : a;
+            assertNotEquals(first.refreshToken(), winner.refreshToken());
+            assertEquals(first.refreshTokenExpiresAt(), winner.refreshTokenExpiresAt());
+            assertEquals(2, count(email));
+            assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(winner.refreshToken()));
         }
     }
 
@@ -253,7 +279,7 @@ class AuthenticationIntegrationTests extends PostgresTestSupport {
         jdbc.update("UPDATE refresh_tokens SET used_at = created_at WHERE user_id = ?", userId(email));
         TokenResponse current = login(email);
         assertThrows(InvalidRefreshTokenException.class, () -> service.refresh(old.refreshToken()));
-        assertEquals(current.refreshToken(), service.refresh(current.refreshToken()).refreshToken());
+        assertNotEquals(current.refreshToken(), service.refresh(current.refreshToken()).refreshToken());
     }
 
     private String register() {
