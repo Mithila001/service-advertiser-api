@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 
-class AuthConfigurationTests {
+class U_AuthConfigurationTests {
     private static final Instant NOW = Instant.parse("2026-10-15T10:00:00Z");
     private static final String KEY = Base64.getEncoder().encodeToString(new byte[32]);
     private final AuthProperties properties = properties(KEY);

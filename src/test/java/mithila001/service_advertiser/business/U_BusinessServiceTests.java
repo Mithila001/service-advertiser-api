@@ -15,7 +15,7 @@ import mithila001.service_advertiser.business.dto.*;
 import mithila001.service_advertiser.user.*;
 
 @ExtendWith(MockitoExtension.class)
-class BusinessServiceTests {
+class U_BusinessServiceTests {
     @Mock BusinessRepository businesses;
     @Mock UserRepository users;
     @Mock RoleRepository roles;

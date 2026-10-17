@@ -25,7 +25,7 @@ import mithila001.service_advertiser.item.dto.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class ItemIntegrationTests extends PostgresTestSupport {
+class I_ItemIntegrationTests extends PostgresTestSupport {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
     @Autowired JdbcTemplate jdbc;

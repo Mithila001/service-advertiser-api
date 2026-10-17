@@ -43,8 +43,8 @@ import mithila001.service_advertiser.auth.dto.TokenResponse;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(AuthenticationIntegrationTests.TestEndpoints.class)
-class AuthenticationIntegrationTests extends PostgresTestSupport {
+@Import(I_AuthenticationIntegrationTests.TestEndpoints.class)
+class I_AuthenticationIntegrationTests extends PostgresTestSupport {
     private static final Instant NOW = Instant.parse("2026-10-15T10:00:00Z");
     private static final String PASSWORD = " SecurePass123! ";
     @Autowired AuthenticationService service;

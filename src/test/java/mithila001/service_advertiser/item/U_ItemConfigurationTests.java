@@ -9,7 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 import mithila001.service_advertiser.business.*;
 import mithila001.service_advertiser.item.dto.CreateItemRequest;
 
-class ItemConfigurationTests {
+class U_ItemConfigurationTests {
     @Test
     void configuredLimitIsUsedInsteadOfDefault() {
         ItemRepository repository = mock(ItemRepository.class);

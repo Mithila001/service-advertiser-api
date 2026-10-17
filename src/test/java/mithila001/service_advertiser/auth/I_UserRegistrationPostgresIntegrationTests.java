@@ -23,7 +23,7 @@ import mithila001.service_advertiser.user.UserRole;
 import mithila001.service_advertiser.PostgresTestSupport;
 
 @SpringBootTest
-class UserRegistrationPostgresIntegrationTests extends PostgresTestSupport {
+class I_UserRegistrationPostgresIntegrationTests extends PostgresTestSupport {
 
     @Autowired
     private RegistrationService registrationService;

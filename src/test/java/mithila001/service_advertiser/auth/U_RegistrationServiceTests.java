@@ -33,7 +33,7 @@ import mithila001.service_advertiser.user.UserRole;
 import mithila001.service_advertiser.user.UserStatus;
 
 @ExtendWith(MockitoExtension.class)
-class RegistrationServiceTests {
+class U_RegistrationServiceTests {
     @Mock
     private UserRepository userRepository;
 

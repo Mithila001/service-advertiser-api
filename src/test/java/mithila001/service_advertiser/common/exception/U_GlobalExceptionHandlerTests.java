@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
-class GlobalExceptionHandlerTests {
+class U_GlobalExceptionHandlerTests {
     @Test
     void unexpectedErrorsDoNotExposeExceptionDetails() {
         var response = new GlobalExceptionHandler()

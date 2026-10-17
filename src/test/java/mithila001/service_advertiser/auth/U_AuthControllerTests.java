@@ -27,7 +27,7 @@ import mithila001.service_advertiser.user.UserRole;
 
 @WebMvcTest(AuthController.class)
 @Import({ SecurityConfig.class, GlobalExceptionHandler.class })
-class AuthControllerTests {
+class U_AuthControllerTests {
     @Autowired
     private MockMvc mockMvc;
 
