@@ -1,5 +1,6 @@
 package mithila001.service_advertiser.item.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
@@ -7,11 +8,15 @@ import jakarta.validation.constraints.*;
 import java.util.List;
 import mithila001.service_advertiser.item.*;
 
+@Schema(description = "Partial update: omit fields to preserve them. Explicit null clears description or price. Null title, type, status, or categoryIds is invalid. An empty categoryIds array clears categories; default maximum 2 (configurable). Prices are in LKR.",
+        example = "{\"status\":\"INACTIVE\",\"price\":null,\"categoryIds\":[]}")
 public class UpdateItemRequest {
     @Size(max = 150) @Pattern(regexp = "(?s).*\\S.*")
     private String title;
+    @Schema(types = {"string", "null"}, description = "Omit to preserve; send null to clear.")
     private String description;
     private ItemType type;
+    @Schema(types = {"number", "null"}, description = "Price in LKR. Omit to preserve; send null to clear; zero means free.")
     @DecimalMin("0") @Digits(integer = 17, fraction = 2)
     private BigDecimal price;
     private ItemStatus status;

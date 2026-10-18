@@ -1,5 +1,27 @@
 # Service Advertiser API
 
+## Interactive API documentation
+
+Run the application, then open [Swagger UI](http://localhost:8080/swagger-ui/index.html).
+The generated OpenAPI specification is available as [JSON](http://localhost:8080/v3/api-docs)
+or [YAML](http://localhost:8080/v3/api-docs.yaml). Use your application's host and port
+if different. These documentation endpoints are public.
+
+To try protected operations:
+
+1. Register an account, then call `POST /api/v1/auth/login` in Swagger UI.
+2. Copy `accessToken` from the response.
+3. Click **Authorize**, paste only the token (without `Bearer`), and authorize.
+4. Use **Try it out** on an operation with a lock icon. Admin operations require an ADMIN account.
+
+Use real catalog IDs from the Categories and Locations endpoints when adapting
+request examples. After refreshing or logging in again, replace the token in
+**Authorize**. Refresh and logout take the opaque refresh token in their JSON body.
+**Try it out** sends real requests, including writes and deletions.
+
+Endpoint descriptions and request examples live alongside the controllers and DTOs;
+shared API information, bearer authentication, and error responses live in `OpenApiConfig`.
+
 ## Authentication configuration
 
 Requires Java 21, Maven, and PostgreSQL. Flyway applies migrations on startup.

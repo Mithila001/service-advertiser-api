@@ -9,7 +9,6 @@ import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import mithila001.service_advertiser.business.Business;
 import mithila001.service_advertiser.business.BusinessStatus;
 import mithila001.service_advertiser.category.ItemCategory;
 import mithila001.service_advertiser.common.SearchText;

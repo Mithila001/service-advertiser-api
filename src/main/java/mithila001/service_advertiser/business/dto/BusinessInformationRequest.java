@@ -1,5 +1,6 @@
 package mithila001.service_advertiser.business.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
@@ -11,6 +12,8 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Schema(description = "Editable business information. Name and a valid catalog cityId are required. PUT clears omitted optional fields and categories. Category IDs must be positive, unique business category IDs; default maximum 3 (configurable).",
+        example = "{\"name\":\"Colombo Services\",\"description\":\"Local services\",\"phone\":\"+94112345678\",\"cityId\":1,\"categoryIds\":[]}")
 public record BusinessInformationRequest(
         @NotBlank @Size(max = 150) String name,
         String description,

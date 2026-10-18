@@ -1,7 +1,6 @@
 package mithila001.service_advertiser.business.dto;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import mithila001.service_advertiser.business.*;
 
 public record BusinessResponse(Integer id, String uniqueName, BusinessInformation information,
