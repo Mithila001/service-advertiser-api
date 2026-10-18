@@ -14,6 +14,9 @@ spring:
     enabled: true
 
 app:
+  categories:
+    max-per-business: ${BUSINESS_MAX_CATEGORIES:3}
+    max-per-item: ${ITEM_MAX_CATEGORIES:2}
   items:
     max-per-business: ${ITEMS_MAX_PER_BUSINESS:10}
   auth:

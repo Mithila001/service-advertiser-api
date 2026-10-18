@@ -10,6 +10,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import mithila001.service_advertiser.category.CategoryService;
 import mithila001.service_advertiser.business.*;
 import mithila001.service_advertiser.item.dto.*;
 
@@ -18,14 +19,16 @@ import mithila001.service_advertiser.item.dto.*;
 public class ItemService {
     private final ItemRepository items;
     private final BusinessService businesses;
+    private final CategoryService categories;
     private final Clock clock;
     private final int maxPerBusiness;
 
-    public ItemService(ItemRepository items, BusinessService businesses, Clock clock,
+    public ItemService(ItemRepository items, BusinessService businesses, CategoryService categories, Clock clock,
             @Value("${app.items.max-per-business:10}") int maxPerBusiness) {
         if (maxPerBusiness < 1) throw new IllegalArgumentException("Item limit must be positive");
         this.items = items;
         this.businesses = businesses;
+        this.categories = categories;
         this.clock = clock;
         this.maxPerBusiness = maxPerBusiness;
     }
@@ -36,7 +39,9 @@ public class ItemService {
         if (items.countByBusinessId(business.getId()) >= maxPerBusiness) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Business item limit reached");
         }
-        return ItemResponse.from(items.save(new Item(business.getId(), request, LocalDateTime.now(clock))));
+        Item item = new Item(business.getId(), request, LocalDateTime.now(clock));
+        item.setCategories(categories.itemSelection(request.categoryIds()));
+        return ItemResponse.from(items.save(item));
     }
 
     public List<ItemResponse> own(Long userId) {
@@ -47,6 +52,7 @@ public class ItemService {
     public ItemResponse update(Long userId, Long id, UpdateItemRequest request) {
         Item item = ownedItem(id, mutableBusiness(userId));
         item.update(request, LocalDateTime.now(clock));
+        if (request.hasCategoryIds()) item.setCategories(categories.itemSelection(request.getCategoryIds()));
         return ItemResponse.from(item);
     }
 

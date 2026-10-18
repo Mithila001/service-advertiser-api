@@ -162,7 +162,8 @@ up to seven fractional digits. Responses contain `id`, `uniqueName`, `informatio
 `status`, `createdAt`, and `updatedAt`.
 
 PUT takes the `information` object directly; name and city are required and omitted
-optional fields are cleared. Unique name, status, IDs, and timestamps are not editable.
+optional fields are cleared. Unique name, status, business ID, and timestamps are not editable.
+`categoryIds` can select up to three business categories and is cleared when omitted.
 Registration creates an ACTIVE business and switches CUSTOMER to PROVIDER atomically.
 Deletion clears ownership and switches back to CUSTOMER atomically, preserving the
 account and authentication sessions. Refresh or log in to obtain the current JWT role;
@@ -174,6 +175,38 @@ account states/registration roles return 403.
 Migration V3 preserves existing businesses, assigns `legacy_business_<id>` unique
 names, and fills missing/blank cities with `Unknown`. Applied migrations are unchanged.
 Migration V4 adds items with a business foreign key using `ON DELETE CASCADE`.
+
+## Categories
+
+Business and item categories are predefined in the database. The catalog endpoints
+are public and return categories ordered by name:
+
+| Method | Endpoint | Behavior |
+| --- | --- | --- |
+| GET | `/api/v1/categories/business` | List business categories |
+| GET | `/api/v1/categories/item` | List item categories |
+
+Each entry contains `id`, `name`, and `description`. Supply category IDs when
+registering a business inside `information`, or when creating an item:
+
+```json
+{"uniqueName":"colombo_services","information":{"name":"Colombo Services","city":"Colombo","categoryIds":[20,23]}}
+```
+
+```json
+{"title":"Home cleaning","type":"SERVICE","categoryIds":[13]}
+```
+
+Categories are optional. A business may have up to three business categories;
+an item may have up to two item categories. Duplicate, nonpositive, and unknown
+IDs are rejected. Business PUT replaces its categories and omission clears them.
+Item PATCH preserves categories when omitted, replaces them when supplied, and
+clears them with `"categoryIds":[]`.
+
+`app.categories.max-per-business` (`BUSINESS_MAX_CATEGORIES`) defaults to 3, and
+`app.categories.max-per-item` (`ITEM_MAX_CATEGORIES`) defaults to 2. Both limits
+must be positive. The category catalogs and their seed data are installed by
+Flyway migration V5; existing businesses and items remain uncategorized.
 
 ## Item management
 
@@ -189,7 +222,7 @@ Migration V4 adds items with a business foreign key using `ON DELETE CASCADE`.
 Create example:
 
 ```json
-{"title":"Home cleaning","type":"SERVICE","description":"Two hours","price":2500.00}
+{"title":"Home cleaning","type":"SERVICE","description":"Two hours","price":2500.00,"categoryIds":[13]}
 ```
 
 Title (up to 150 characters) and type (`PRODUCT` or `SERVICE`) are required.
@@ -198,12 +231,12 @@ Description and price are optional. Price uses a nonnegative decimal with up to
 means free. Client-supplied business IDs do not control ownership. New items
 always start ACTIVE.
 
-PATCH accepts `title`, `description`, `type`, `price`, and `status` (`ACTIVE` or
-`INACTIVE`). Omitted fields are preserved. Explicit null clears description or
-price; null title, type, or status is invalid. Example:
+PATCH accepts `title`, `description`, `type`, `price`, `status` (`ACTIVE` or
+`INACTIVE`), and `categoryIds`. Omitted fields are preserved. Explicit null clears
+description or price; null title, type, status, or categoryIds is invalid. Example:
 
 ```json
-{"status":"INACTIVE","price":null}
+{"status":"INACTIVE","price":null,"categoryIds":[]}
 ```
 
 Protected item endpoints check the current account, PROVIDER role, and business

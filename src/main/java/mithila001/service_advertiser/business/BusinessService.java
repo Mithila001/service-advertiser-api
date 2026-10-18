@@ -7,6 +7,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import mithila001.service_advertiser.category.CategoryService;
 import mithila001.service_advertiser.business.dto.*;
 import mithila001.service_advertiser.common.exception.RoleNotFoundException;
 import mithila001.service_advertiser.user.*;
@@ -18,12 +19,15 @@ public class BusinessService {
     private final UserRepository users;
     private final RoleRepository roles;
     private final Clock clock;
+    private final CategoryService categories;
 
-    public BusinessService(BusinessRepository businesses, UserRepository users, RoleRepository roles, Clock clock) {
+    public BusinessService(BusinessRepository businesses, UserRepository users, RoleRepository roles, Clock clock,
+            CategoryService categories) {
         this.businesses = businesses;
         this.users = users;
         this.roles = roles;
         this.clock = clock;
+        this.categories = categories;
     }
 
     public BusinessResponse register(Long userId, RegisterBusinessRequest request) {
@@ -39,7 +43,9 @@ public class BusinessService {
         }
         var provider = roles.findByName(UserRole.PROVIDER).orElseThrow(RoleNotFoundException::new);
         LocalDateTime now = LocalDateTime.now(clock);
-        Business business = businesses.saveAndFlush(new Business(request.uniqueName(), request.information(), now));
+        Business business = new Business(request.uniqueName(), request.information(), now);
+        business.setCategories(categories.businessSelection(request.information().categoryIds()));
+        business = businesses.saveAndFlush(business);
         user.setBusinessId(business.getId());
         user.setRole(provider);
         user.setUpdatedAt(now);
@@ -53,6 +59,7 @@ public class BusinessService {
     public BusinessResponse update(Long userId, BusinessInformation information) {
         Business business = ownedBusiness(activeUser(userId));
         business.update(information, LocalDateTime.now(clock));
+        business.setCategories(categories.businessSelection(information.categoryIds()));
         return BusinessResponse.from(business);
     }
 

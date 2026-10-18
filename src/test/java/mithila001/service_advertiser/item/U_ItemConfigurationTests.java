@@ -6,6 +6,7 @@ import java.time.Clock;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.web.server.ResponseStatusException;
+import mithila001.service_advertiser.category.CategoryService;
 import mithila001.service_advertiser.business.*;
 import mithila001.service_advertiser.item.dto.CreateItemRequest;
 
@@ -22,6 +23,7 @@ class U_ItemConfigurationTests {
         new ApplicationContextRunner().withUserConfiguration(ItemService.class)
                 .withBean(ItemRepository.class, () -> repository)
                 .withBean(BusinessService.class, () -> businesses)
+                .withBean(CategoryService.class, () -> mock(CategoryService.class))
                 .withBean(Clock.class, Clock::systemUTC)
                 .withPropertyValues("app.items.max-per-business=2")
                 .run(context -> {

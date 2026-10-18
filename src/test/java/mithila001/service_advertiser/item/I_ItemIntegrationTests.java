@@ -74,6 +74,7 @@ class I_ItemIntegrationTests extends PostgresTestSupport {
         ItemResponse service = create(owner, "SERVICE", null);
         assertEquals(new BigDecimal("12.34"), product.price());
         assertNull(service.price());
+        assertEquals(List.of(), service.categoryIds());
         mvc.perform(get("/api/v1/items/" + product.id())).andExpect(status().isOk())
                 .andExpect(jsonPath("$.price").value(12.34));
         mvc.perform(json(as(patch("/api/v1/items/" + product.id()), owner),
@@ -91,6 +92,55 @@ class I_ItemIntegrationTests extends PostgresTestSupport {
         mvc.perform(as(delete("/api/v1/items/" + product.id()), owner)).andExpect(status().isNoContent());
         mvc.perform(get("/api/v1/items/" + product.id())).andExpect(status().isNotFound());
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM items WHERE id = ?", Integer.class, product.id()));
+    }
+
+    @Test
+    void assignsItemCategoriesWithPatchSemanticsAndCleansAssignmentsOnDelete() throws Exception {
+        Owner owner = owner(true);
+        Map<String, Object> body = Map.of("title", "Categorized", "type", "PRODUCT", "categoryIds", List.of(2, 1));
+        String response = mvc.perform(json(as(post("/api/v1/businesses/me/items"), owner), body))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.categoryIds[0]").value(1))
+                .andExpect(jsonPath("$.categoryIds[1]").value(2)).andReturn().getResponse().getContentAsString();
+        ItemResponse item = mapper.readValue(response, ItemResponse.class);
+        mvc.perform(get("/api/v1/items/" + item.id())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.categoryIds[0]").value(1));
+
+        mvc.perform(json(as(patch("/api/v1/items/" + item.id()), owner), Map.of("title", "Still categorized")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.categoryIds.length()").value(2));
+        mvc.perform(json(as(patch("/api/v1/items/" + item.id()), owner), Map.of("categoryIds", List.of())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.categoryIds").isEmpty());
+        mvc.perform(json(as(patch("/api/v1/items/" + item.id()), owner), Map.of("categoryIds", List.of(2))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.categoryIds[0]").value(2));
+        mvc.perform(json(as(patch("/api/v1/items/" + item.id()), owner), Map.of("categoryIds", List.of(1, 2, 3))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/items/" + item.id())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.categoryIds[0]").value(2));
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM item_category_assignments WHERE item_id = ?",
+                Integer.class, item.id()));
+        mvc.perform(as(delete("/api/v1/items/" + item.id()), owner)).andExpect(status().isNoContent());
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM item_category_assignments WHERE item_id = ?",
+                Integer.class, item.id()));
+    }
+
+    @Test
+    void rejectsInvalidItemCategorySelectionsAndProtectsOwnership() throws Exception {
+        Owner owner = owner(true);
+        Owner other = owner(true);
+        for (String categories : new String[] { "[1,1]", "[0]", "[999]", "[1,2,3]", "[1,null]" }) {
+            String body = "{\"title\":\"Bad\",\"type\":\"PRODUCT\",\"categoryIds\":" + categories + "}";
+            mvc.perform(as(post("/api/v1/businesses/me/items"), owner).contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        mvc.perform(as(post("/api/v1/businesses/me/items"), owner).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"No categories\",\"type\":\"PRODUCT\",\"categoryIds\":null}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.categoryIds").isEmpty());
+        ItemResponse item = create(owner, "PRODUCT", null);
+        mvc.perform(json(as(patch("/api/v1/items/" + item.id()), owner), Map.of("categoryIds", List.of(1))))
+                .andExpect(status().isOk());
+        mvc.perform(json(as(patch("/api/v1/items/" + item.id()), other), Map.of("categoryIds", List.of(2))))
+                .andExpect(status().isNotFound());
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM item_category_assignments WHERE item_id = ?",
+                Integer.class, item.id()));
     }
 
     @Test

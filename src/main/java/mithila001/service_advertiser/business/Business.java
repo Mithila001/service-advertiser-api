@@ -3,6 +3,9 @@ package mithila001.service_advertiser.business;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+import mithila001.service_advertiser.category.BusinessCategory;
 import mithila001.service_advertiser.business.dto.BusinessInformation;
 
 @Entity
@@ -47,6 +50,11 @@ public class Business {
     private LocalDateTime createdAt;
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "business_category_assignments",
+            joinColumns = @JoinColumn(name = "business_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id"))
+    private Set<BusinessCategory> categories = new HashSet<>();
 
     protected Business() {}
 
@@ -74,6 +82,10 @@ public class Business {
         this.logoUrl = information.logoUrl();
         this.updatedAt = now;
     }
+    public void setCategories(Iterable<BusinessCategory> categories) {
+        this.categories.clear();
+        categories.forEach(this.categories::add);
+    }
     public Integer getId() { return id; }
     public String getUniqueName() { return uniqueName; }
     public String getName() { return name; }
@@ -93,4 +105,5 @@ public class Business {
     public BusinessStatus getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public Set<BusinessCategory> getCategories() { return categories; }
 }

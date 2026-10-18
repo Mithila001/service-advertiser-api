@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import mithila001.service_advertiser.category.CategoryService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 import mithila001.service_advertiser.business.dto.*;
@@ -19,6 +20,7 @@ class U_BusinessServiceTests {
     @Mock BusinessRepository businesses;
     @Mock UserRepository users;
     @Mock RoleRepository roles;
+    @Mock CategoryService categories;
     BusinessService service;
     User user;
     final Clock clock = Clock.fixed(Instant.parse("2026-10-17T10:00:00Z"), ZoneOffset.UTC);
@@ -27,7 +29,7 @@ class U_BusinessServiceTests {
 
     @BeforeEach
     void setup() {
-        service = new BusinessService(businesses, users, roles, clock);
+        service = new BusinessService(businesses, users, roles, clock, categories);
         user = new User();
         user.setId(1L);
         user.setStatus(UserStatus.ACTIVE);

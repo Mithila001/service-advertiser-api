@@ -58,6 +58,63 @@ class I_BusinessIntegrationTests extends PostgresTestSupport {
     }
 
     @Test
+    void exposesSeededCatalogsAndAssignsBusinessCategories() throws Exception {
+        mvc.perform(get("/api/v1/categories/business")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(25))
+                .andExpect(jsonPath("$[0].name").value("Agriculture & Farming"))
+                .andExpect(jsonPath("$[0].description").value("Farming agricultural supplies and agricultural services"));
+        mvc.perform(get("/api/v1/categories/item")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(40))
+                .andExpect(jsonPath("$[0].name").value("Accessories"));
+
+        Account owner = account();
+        Map<String, Object> info = Map.of("name", "Categorized", "city", "Colombo", "categoryIds", java.util.List.of(1, 3));
+        mvc.perform(as(post("/api/v1/businesses"), owner).contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("uniqueName", uniqueName(), "information", info))))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.information.categoryIds[0]").value(1))
+                .andExpect(jsonPath("$.information.categoryIds[1]").value(3));
+        Integer businessId = jdbc.queryForObject("SELECT business_id FROM users WHERE id = ?", Integer.class, owner.id);
+        assertEquals(2, jdbc.queryForObject("SELECT count(*) FROM business_category_assignments WHERE business_id = ?",
+                Integer.class, businessId));
+
+        mvc.perform(as(put("/api/v1/businesses/me"), owner).contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("name", "Changed", "city", "Galle", "categoryIds", java.util.List.of(2)))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.information.categoryIds").isArray())
+                .andExpect(jsonPath("$.information.categoryIds.length()").value(1))
+                .andExpect(jsonPath("$.information.categoryIds[0]").value(2));
+        mvc.perform(as(put("/api/v1/businesses/me"), owner).contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("name", "Rejected", "city", "Galle", "categoryIds", java.util.List.of(1, 2, 3, 4)))))
+                .andExpect(status().isBadRequest());
+        mvc.perform(as(get("/api/v1/businesses/me"), owner)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.information.name").value("Changed"))
+                .andExpect(jsonPath("$.information.categoryIds[0]").value(2));
+        mvc.perform(as(put("/api/v1/businesses/me"), owner).contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("name", "Changed", "city", "Galle"))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.information.categoryIds").isEmpty());
+    }
+
+    @Test
+    void rejectsInvalidBusinessCategorySelectionsAndCleansAssignmentsOnDelete() throws Exception {
+        Account owner = account();
+        String name = uniqueName();
+        for (java.util.List<Integer> ids : java.util.List.of(java.util.List.of(1, 1), java.util.List.of(0),
+                java.util.List.of(999), java.util.List.of(1, 2, 3, 4))) {
+            Map<String, Object> info = Map.of("name", "Invalid", "city", "Colombo", "categoryIds", ids);
+            mvc.perform(as(post("/api/v1/businesses"), owner).contentType(MediaType.APPLICATION_JSON)
+                    .content(json(Map.of("uniqueName", name, "information", info))))
+                    .andExpect(status().isBadRequest());
+        }
+        Map<String, Object> info = Map.of("name", "Valid", "city", "Colombo", "categoryIds", java.util.List.of(1));
+        mvc.perform(as(post("/api/v1/businesses"), owner).contentType(MediaType.APPLICATION_JSON)
+                .content(json(Map.of("uniqueName", name, "information", info))))
+                .andExpect(status().isCreated());
+        Integer businessId = jdbc.queryForObject("SELECT business_id FROM users WHERE id = ?", Integer.class, owner.id);
+        mvc.perform(as(delete("/api/v1/businesses/me"), owner)).andExpect(status().isNoContent());
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM business_category_assignments WHERE business_id = ?",
+                Integer.class, businessId));
+    }
+
+    @Test
     void lifecyclePreservesSessionAndUsesCurrentRoleDespiteStaleJwt() throws Exception {
         Account owner = account();
         String name = uniqueName();
