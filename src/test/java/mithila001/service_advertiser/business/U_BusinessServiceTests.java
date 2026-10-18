@@ -97,7 +97,7 @@ class U_BusinessServiceTests {
     void updatesOnlyOwnedBusinessAndDeletesAfterClearingForeignKey() {
         user.setBusinessId(7);
         Business business = new Business("immutable_name", info, city, LocalDateTime.now(clock).minusDays(1));
-        when(businesses.findById(7)).thenReturn(Optional.of(business));
+        when(businesses.findForUpdate(7)).thenReturn(Optional.of(business));
         BusinessResponse result = service.update(1L, info);
         assertEquals("immutable_name", result.uniqueName());
         assertEquals(LocalDateTime.now(clock), result.updatedAt());

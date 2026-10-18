@@ -91,6 +91,14 @@ public class Business {
         this.categories.clear();
         categories.forEach(this.categories::add);
     }
+    public void suspend(LocalDateTime now) {
+        this.status = BusinessStatus.SUSPENDED;
+        this.updatedAt = now;
+    }
+    public void activate(LocalDateTime now) {
+        this.status = BusinessStatus.ACTIVE;
+        this.updatedAt = now;
+    }
     public Integer getId() { return id; }
     public String getUniqueName() { return uniqueName; }
     public String getName() { return name; }

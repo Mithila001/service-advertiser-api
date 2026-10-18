@@ -62,6 +62,7 @@ public class BusinessService {
 
     public BusinessResponse update(Long userId, BusinessInformationRequest information) {
         Business business = ownedBusiness(activeUser(userId));
+        requireActive(business);
         var city = locations.requireCity(information.cityId());
         business.update(information, city, LocalDateTime.now(clock));
         business.setCategories(categories.businessSelection(information.categoryIds()));
@@ -71,6 +72,7 @@ public class BusinessService {
     public void delete(Long userId) {
         User user = activeUser(userId);
         Business business = ownedBusiness(user);
+        requireActive(business);
         var customer = roles.findByName(UserRole.CUSTOMER).orElseThrow(RoleNotFoundException::new);
         user.setBusinessId(null);
         user.setRole(customer);
@@ -82,8 +84,9 @@ public class BusinessService {
 
     @Transactional(readOnly = true)
     public BusinessResponse publicProfile(String uniqueName) {
-        return BusinessResponse.from(businesses.findByUniqueName(uniqueName).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Business not found")));
+        Business business = businesses.findByUniqueName(uniqueName).filter(b -> b.getStatus() == BusinessStatus.ACTIVE).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Business not found"));
+        return BusinessResponse.from(business);
     }
 
     public Business providerBusiness(Long userId) {
@@ -106,7 +109,14 @@ public class BusinessService {
         if (user.getBusinessId() == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Business not found");
         }
-        return businesses.findById(user.getBusinessId()).orElseThrow(
+        // Share the moderator's row lock so owner writes cannot overwrite a suspension.
+        return businesses.findForUpdate(user.getBusinessId()).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Business not found"));
+    }
+
+    private static void requireActive(Business business) {
+        if (business.getStatus() != BusinessStatus.ACTIVE) {
+            throw new AccessDeniedException("Business is inactive");
+        }
     }
 }
