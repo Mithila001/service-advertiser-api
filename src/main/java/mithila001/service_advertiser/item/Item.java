@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import mithila001.service_advertiser.category.ItemCategory;
 import mithila001.service_advertiser.item.dto.*;
+import mithila001.service_advertiser.business.Business;
 
 @Entity
 @Table(name = "items")
@@ -15,6 +16,9 @@ public class Item {
     private Long id;
     @Column(name = "business_id", nullable = false, updatable = false)
     private Integer businessId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "business_id", insertable = false, updatable = false)
+    private Business business;
     @Column(nullable = false, length = 150)
     private String title;
     @Column(columnDefinition = "text")

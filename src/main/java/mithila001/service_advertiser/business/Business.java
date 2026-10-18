@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import mithila001.service_advertiser.category.BusinessCategory;
-import mithila001.service_advertiser.business.dto.BusinessInformation;
+import mithila001.service_advertiser.business.dto.BusinessInformationRequest;
+import mithila001.service_advertiser.location.City;
 
 @Entity
 @Table(name = "business")
@@ -43,6 +44,9 @@ public class Business {
     private BigDecimal longitude;
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id")
+    private City cityCatalogEntry;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private BusinessStatus status;
@@ -58,14 +62,14 @@ public class Business {
 
     protected Business() {}
 
-    public Business(String uniqueName, BusinessInformation information, LocalDateTime now) {
+    public Business(String uniqueName, BusinessInformationRequest information, City cityCatalogEntry, LocalDateTime now) {
         this.uniqueName = uniqueName;
         this.status = BusinessStatus.ACTIVE;
         this.createdAt = now;
-        update(information, now);
+        update(information, cityCatalogEntry, now);
     }
 
-    public void update(BusinessInformation information, LocalDateTime now) {
+    public void update(BusinessInformationRequest information, City cityCatalogEntry, LocalDateTime now) {
         this.name = information.name();
         this.description = information.description();
         this.phone = information.phone();
@@ -73,9 +77,10 @@ public class Business {
         this.websiteUrl = information.websiteUrl();
         this.addressLine1 = information.addressLine1();
         this.addressLine2 = information.addressLine2();
-        this.city = information.city();
-        this.district = information.district();
-        this.province = information.province();
+        this.cityCatalogEntry = cityCatalogEntry;
+        this.city = cityCatalogEntry.getName();
+        this.district = cityCatalogEntry.getDistrict().getName();
+        this.province = cityCatalogEntry.getDistrict().getProvince().getName();
         this.postalCode = information.postalCode();
         this.latitude = information.latitude();
         this.longitude = information.longitude();
@@ -102,6 +107,7 @@ public class Business {
     public BigDecimal getLatitude() { return latitude; }
     public BigDecimal getLongitude() { return longitude; }
     public String getLogoUrl() { return logoUrl; }
+    public City getCityCatalogEntry() { return cityCatalogEntry; }
     public BusinessStatus getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

@@ -42,8 +42,8 @@ class I_ItemIntegrationTests extends PostgresTestSupport {
         String name = "items_" + UUID.randomUUID().toString().replace("-", "");
         int businessId = 0;
         if (withBusiness) {
-            var info = new BusinessInformation("Business", null, null, null, null, null, null, "Colombo",
-                    null, null, null, null, null, null);
+            var info = new BusinessInformationRequest("Business", null, null, null, null, null, null, 1,
+                    null, null, null, null, null);
             businessId = businesses.register(id, new RegisterBusinessRequest(name, info)).id();
         }
         // Deliberately retain the CUSTOMER JWT to prove authorization uses database state.

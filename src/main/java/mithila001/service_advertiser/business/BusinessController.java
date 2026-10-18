@@ -27,7 +27,7 @@ public class BusinessController {
     }
 
     @PutMapping("/me")
-    public BusinessResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody BusinessInformation request) {
+    public BusinessResponse update(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody BusinessInformationRequest request) {
         return service.update(Long.valueOf(jwt.getSubject()), request);
     }
 

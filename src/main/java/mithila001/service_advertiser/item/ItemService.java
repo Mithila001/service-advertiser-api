@@ -13,6 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 import mithila001.service_advertiser.category.CategoryService;
 import mithila001.service_advertiser.business.*;
 import mithila001.service_advertiser.item.dto.*;
+import mithila001.service_advertiser.common.PageResponse;
+import mithila001.service_advertiser.common.PaginationPolicy;
 
 @Service
 @Transactional
@@ -22,15 +24,17 @@ public class ItemService {
     private final CategoryService categories;
     private final Clock clock;
     private final int maxPerBusiness;
+    private final PaginationPolicy pagination;
 
     public ItemService(ItemRepository items, BusinessService businesses, CategoryService categories, Clock clock,
-            @Value("${app.items.max-per-business:10}") int maxPerBusiness) {
+            @Value("${app.items.max-per-business:10}") int maxPerBusiness, PaginationPolicy pagination) {
         if (maxPerBusiness < 1) throw new IllegalArgumentException("Item limit must be positive");
         this.items = items;
         this.businesses = businesses;
         this.categories = categories;
         this.clock = clock;
         this.maxPerBusiness = maxPerBusiness;
+        this.pagination = pagination;
     }
 
     public ItemResponse create(Long userId, CreateItemRequest request) {
@@ -66,11 +70,9 @@ public class ItemService {
     }
 
     @Transactional(readOnly = true)
-    public ItemPageResponse publicItems(String uniqueName, int page, int size) {
-        if (page < 0 || size < 1 || size > 100) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must be nonnegative and size between 1 and 100");
-        }
-        return ItemPageResponse.from(items.findPublicByBusiness(uniqueName, PageRequest.of(page, size, Sort.by("id"))));
+    public PageResponse<ItemResponse> publicItems(String uniqueName, Integer page, Integer size) {
+        Pageable pageable = pagination.page(page, size, Sort.by("id"));
+        return PageResponse.from(items.findPublicByBusiness(uniqueName, pageable), ItemResponse::from);
     }
 
     private Business mutableBusiness(Long userId) {

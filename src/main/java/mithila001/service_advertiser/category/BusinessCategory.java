@@ -1,6 +1,9 @@
 package mithila001.service_advertiser.category;
 
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
+import mithila001.service_advertiser.business.Business;
 
 @Entity
 @Table(name = "business_categories")
@@ -11,6 +14,8 @@ public class BusinessCategory {
     private String name;
     @Column(nullable = false, columnDefinition = "text")
     private String description;
+    @ManyToMany(mappedBy = "categories", fetch = FetchType.LAZY)
+    private Set<Business> businesses = new HashSet<>();
 
     protected BusinessCategory() {}
 

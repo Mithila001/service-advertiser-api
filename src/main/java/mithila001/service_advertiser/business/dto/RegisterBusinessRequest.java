@@ -5,4 +5,4 @@ import jakarta.validation.constraints.*;
 
 public record RegisterBusinessRequest(
         @NotNull @Pattern(regexp = "[a-z0-9_]{3,50}") String uniqueName,
-        @NotNull @Valid BusinessInformation information) {}
+        @NotNull @Valid BusinessInformationRequest information) {}

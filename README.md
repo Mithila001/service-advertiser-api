@@ -40,6 +40,9 @@ the file. Use HTTPS in production.
 | `JWT_AUDIENCE` | `service-advertiser-api` |
 | `JWT_ACCESS_LIFETIME` | `15m` |
 | `JWT_REFRESH_LIFETIME` | `7d` |
+| `PAGINATION_DEFAULT_SIZE` | `10` |
+| `PAGINATION_MAX_SIZE` | `100` |
+| `PAGINATION_MAX_OFFSET` | `10000` |
 
 Database settings can also be supplied in `.env` through `SPRING_DATASOURCE_URL`,
 `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`.
@@ -146,23 +149,26 @@ Registration example (requires a customer access JWT):
   "uniqueName": "colombo_services",
   "information": {
     "name": "Colombo Services",
-    "city": "Colombo",
+    "cityId": 1,
     "description": "Local services",
     "phone": "+94112345678"
   }
 }
 ```
 
-`uniqueName` accepts 3?50 lowercase ASCII letters, numbers, or underscores and
-cannot be changed. Display names may repeat. `information` also accepts `email`,
-`websiteUrl`, `addressLine1`, `addressLine2`, `district`, `province`, `postalCode`,
+`uniqueName` accepts 3 to 50 lowercase ASCII letters, numbers, or underscores and
+cannot be changed. Display names may repeat. `information` requires `cityId` from
+the public location catalog and also accepts `email`, `websiteUrl`, `addressLine1`,
+`addressLine2`, `postalCode`,
 `latitude`, `longitude`, and `logoUrl` (an existing URL field; no upload endpoint).
-Coordinates are optional and limited to latitude ?90 and longitude ?180, with
+Coordinates are optional and limited to latitude from -90 to 90 and longitude from -180 to 180, with
 up to seven fractional digits. Responses contain `id`, `uniqueName`, `information`,
 `status`, `createdAt`, and `updatedAt`.
 
-PUT takes the `information` object directly; name and city are required and omitted
-optional fields are cleared. Unique name, status, business ID, and timestamps are not editable.
+Responses include the canonical `city`, `district`, and `province` names plus
+`cityId`, `districtId`, and `provinceId`. PUT takes the information object directly;
+name and `cityId` are required and omitted optional fields are cleared. Location
+names are derived from the selected city. Unique name, status, business ID, and timestamps are not editable.
 `categoryIds` can select up to three business categories and is cleared when omitted.
 Registration creates an ACTIVE business and switches CUSTOMER to PROVIDER atomically.
 Deletion clears ownership and switches back to CUSTOMER atomically, preserving the
@@ -175,6 +181,26 @@ account states/registration roles return 403.
 Migration V3 preserves existing businesses, assigns `legacy_business_<id>` unique
 names, and fills missing/blank cities with `Unknown`. Applied migrations are unchanged.
 Migration V4 adds items with a business foreign key using `ON DELETE CASCADE`.
+Migration V6 seeds all nine provinces, 25 districts, and five selected localities
+per district. This starter city catalog is intentionally curated rather than
+exhaustive; locality names are a project-curated starter list. Its administrative
+hierarchy follows the [Department of Census and Statistics 2024 preliminary report](https://www.statistics.gov.lk/Resource/en/Population/CPH_2024/Preliminary_Report.pdf).
+Existing business location text is retained; only unambiguous matches
+are linked. Unmatched legacy businesses remain readable and become searchable by
+catalog location after their owner updates the business with a city ID.
+
+## Locations
+
+The public catalog supports a hierarchical city picker:
+
+| Method | Endpoint | Behavior |
+| --- | --- | --- |
+| GET | `/api/v1/locations/provinces` | List provinces alphabetically |
+| GET | `/api/v1/locations/districts?provinceId=1` | List districts, optionally within a province |
+| GET | `/api/v1/locations/cities?q=colombo&districtId=1` | Search and page through cities |
+
+City results include their district and province IDs and names. City search is a
+case-insensitive substring match. The catalog endpoints are public.
 
 ## Categories
 
@@ -190,7 +216,7 @@ Each entry contains `id`, `name`, and `description`. Supply category IDs when
 registering a business inside `information`, or when creating an item:
 
 ```json
-{"uniqueName":"colombo_services","information":{"name":"Colombo Services","city":"Colombo","categoryIds":[20,23]}}
+{"uniqueName":"colombo_services","information":{"name":"Colombo Services","cityId":1,"categoryIds":[20,23]}}
 ```
 
 ```json
@@ -246,7 +272,8 @@ Other businesses' item IDs return 404 for updates/deletion. Public detail return
 404 unless both item and business are ACTIVE.
 
 Public lists return `content`, `page`, `size`, `totalElements`, and `totalPages`.
-Page numbering starts at zero; size must be 1?100. Results are ordered by item ID.
+Page numbering starts at zero. The client can choose a size up to the configured
+maximum. Results are ordered by item ID.
 Unknown, suspended, or disabled businesses produce an empty public list.
 
 `app.items.max-per-business` (environment variable `ITEMS_MAX_PER_BUSINESS`)
@@ -254,3 +281,41 @@ defaults to 10 and must be positive. Both ACTIVE and INACTIVE items count. Reque
 at the limit return 409. The owner-row database lock serializes creation and
 business deletion; deleting an item frees a slot. Deleting a business permanently
 removes all its items while retaining the user and authentication sessions.
+
+## Public discovery
+
+Business search and item search are separate public endpoints. Search matches the
+business name or item title, respectively, using trimmed, case-insensitive literal
+substring matching. Search text is limited to 150 characters. Category IDs use
+ANY matching; other filters combine with AND.
+
+| Method | Endpoint | Filters and sorting |
+| --- | --- | --- |
+| GET | `/api/v1/businesses?q=repair&categoryIds=1,2&cityId=1&sort=name,asc` | Active businesses; sort by name |
+| GET | `/api/v1/items?q=cleaning&type=SERVICE&categoryIds=13,25&provinceId=1` | Active items from active businesses; filter by type, location, and price |
+
+Both return `content`, `page`, `size`, `totalElements`, and `totalPages`. Use
+zero-based `page` and `size`; defaults are 0 and 10, maximum size is 100, and
+offsets over 10,000 are rejected. Configure these limits with
+`PAGINATION_DEFAULT_SIZE`, `PAGINATION_MAX_SIZE`, and `PAGINATION_MAX_OFFSET`.
+Name sorting is case-insensitive and uses ID as a stable tie-breaker. Item sorting
+also accepts `sort=price,asc` or `sort=price,desc`; unpriced items sort below LKR 0
+ascending and after priced items descending.
+
+Item filters also accept `type=PRODUCT|SERVICE`, `minPrice`, and `maxPrice`. Prices
+are in Sri Lankan rupees (LKR), with at most two fractional digits. Negative values
+and ranges where minimum exceeds maximum return `400`. Unpriced items remain
+included when no minimum is supplied, including max-only searches. Supplying any
+minimum, including zero, excludes unpriced items. Zero is a known free price.
+
+Examples:
+
+```http
+GET /api/v1/businesses?q=repair&categoryIds=1,2&provinceId=1&page=0&size=10&sort=name,asc
+GET /api/v1/items?q=cleaning&cityId=1&type=SERVICE&minPrice=500&maxPrice=5000&sort=price,asc
+```
+
+Unsupported sort fields, unknown or duplicate category IDs, invalid location IDs,
+and contradictory city/district/province filters return `400`. Businesses and
+items with legacy locations but no catalog city remain in unfiltered results and
+are omitted when a catalog location filter is used.

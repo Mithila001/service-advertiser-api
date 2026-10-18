@@ -7,6 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import mithila001.service_advertiser.item.dto.*;
+import mithila001.service_advertiser.common.PageResponse;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -35,8 +36,8 @@ public class ItemController {
     @GetMapping("/items/{id}")
     public ItemResponse publicItem(@PathVariable Long id) { return service.publicItem(id); }
     @GetMapping("/businesses/{uniqueName}/items")
-    public ItemPageResponse publicItems(@PathVariable String uniqueName,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    public PageResponse<ItemResponse> publicItems(@PathVariable String uniqueName,
+            @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
         return service.publicItems(uniqueName, page, size);
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 import mithila001.service_advertiser.category.CategoryService;
 import mithila001.service_advertiser.business.*;
 import mithila001.service_advertiser.item.dto.CreateItemRequest;
+import mithila001.service_advertiser.common.PaginationPolicy;
 
 class U_ItemConfigurationTests {
     @Test
@@ -24,6 +25,7 @@ class U_ItemConfigurationTests {
                 .withBean(ItemRepository.class, () -> repository)
                 .withBean(BusinessService.class, () -> businesses)
                 .withBean(CategoryService.class, () -> mock(CategoryService.class))
+                .withBean(PaginationPolicy.class, () -> new PaginationPolicy(10, 100, 10000))
                 .withBean(Clock.class, Clock::systemUTC)
                 .withPropertyValues("app.items.max-per-business=2")
                 .run(context -> {

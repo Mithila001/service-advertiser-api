@@ -11,6 +11,7 @@ import mithila001.service_advertiser.category.CategoryService;
 import mithila001.service_advertiser.business.dto.*;
 import mithila001.service_advertiser.common.exception.RoleNotFoundException;
 import mithila001.service_advertiser.user.*;
+import mithila001.service_advertiser.location.LocationCatalogService;
 
 @Service
 @Transactional
@@ -20,14 +21,16 @@ public class BusinessService {
     private final RoleRepository roles;
     private final Clock clock;
     private final CategoryService categories;
+    private final LocationCatalogService locations;
 
     public BusinessService(BusinessRepository businesses, UserRepository users, RoleRepository roles, Clock clock,
-            CategoryService categories) {
+            CategoryService categories, LocationCatalogService locations) {
         this.businesses = businesses;
         this.users = users;
         this.roles = roles;
         this.clock = clock;
         this.categories = categories;
+        this.locations = locations;
     }
 
     public BusinessResponse register(Long userId, RegisterBusinessRequest request) {
@@ -43,7 +46,8 @@ public class BusinessService {
         }
         var provider = roles.findByName(UserRole.PROVIDER).orElseThrow(RoleNotFoundException::new);
         LocalDateTime now = LocalDateTime.now(clock);
-        Business business = new Business(request.uniqueName(), request.information(), now);
+        var city = locations.requireCity(request.information().cityId());
+        Business business = new Business(request.uniqueName(), request.information(), city, now);
         business.setCategories(categories.businessSelection(request.information().categoryIds()));
         business = businesses.saveAndFlush(business);
         user.setBusinessId(business.getId());
@@ -56,9 +60,10 @@ public class BusinessService {
         return BusinessResponse.from(ownedBusiness(activeUser(userId)));
     }
 
-    public BusinessResponse update(Long userId, BusinessInformation information) {
+    public BusinessResponse update(Long userId, BusinessInformationRequest information) {
         Business business = ownedBusiness(activeUser(userId));
-        business.update(information, LocalDateTime.now(clock));
+        var city = locations.requireCity(information.cityId());
+        business.update(information, city, LocalDateTime.now(clock));
         business.setCategories(categories.businessSelection(information.categoryIds()));
         return BusinessResponse.from(business);
     }

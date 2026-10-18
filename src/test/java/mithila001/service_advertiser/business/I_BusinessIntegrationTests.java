@@ -45,7 +45,7 @@ class I_BusinessIntegrationTests extends PostgresTestSupport {
     }
 
     private String uniqueName() { return "business_" + UUID.randomUUID().toString().replace("-", ""); }
-    private Map<String, Object> information() { return Map.of("name", "Same display name", "city", "Colombo"); }
+    private Map<String, Object> information() { return Map.of("name", "Same display name", "cityId", 1); }
     private String json(Object value) { return mapper.writeValueAsString(value); }
     private MockHttpServletRequestBuilder as(MockHttpServletRequestBuilder request, Account owner) {
         return request.header("Authorization", "Bearer " + owner.tokens.accessToken());
@@ -68,7 +68,7 @@ class I_BusinessIntegrationTests extends PostgresTestSupport {
                 .andExpect(jsonPath("$[0].name").value("Accessories"));
 
         Account owner = account();
-        Map<String, Object> info = Map.of("name", "Categorized", "city", "Colombo", "categoryIds", java.util.List.of(1, 3));
+        Map<String, Object> info = Map.of("name", "Categorized", "cityId", 1, "categoryIds", java.util.List.of(1, 3));
         mvc.perform(as(post("/api/v1/businesses"), owner).contentType(MediaType.APPLICATION_JSON)
                 .content(json(Map.of("uniqueName", uniqueName(), "information", info))))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.information.categoryIds[0]").value(1))
@@ -78,18 +78,18 @@ class I_BusinessIntegrationTests extends PostgresTestSupport {
                 Integer.class, businessId));
 
         mvc.perform(as(put("/api/v1/businesses/me"), owner).contentType(MediaType.APPLICATION_JSON)
-                .content(json(Map.of("name", "Changed", "city", "Galle", "categoryIds", java.util.List.of(2)))))
+                .content(json(Map.of("name", "Changed", "cityId", 31, "categoryIds", java.util.List.of(2)))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.information.categoryIds").isArray())
                 .andExpect(jsonPath("$.information.categoryIds.length()").value(1))
                 .andExpect(jsonPath("$.information.categoryIds[0]").value(2));
         mvc.perform(as(put("/api/v1/businesses/me"), owner).contentType(MediaType.APPLICATION_JSON)
-                .content(json(Map.of("name", "Rejected", "city", "Galle", "categoryIds", java.util.List.of(1, 2, 3, 4)))))
+                .content(json(Map.of("name", "Rejected", "cityId", 31, "categoryIds", java.util.List.of(1, 2, 3, 4)))))
                 .andExpect(status().isBadRequest());
         mvc.perform(as(get("/api/v1/businesses/me"), owner)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.information.name").value("Changed"))
                 .andExpect(jsonPath("$.information.categoryIds[0]").value(2));
         mvc.perform(as(put("/api/v1/businesses/me"), owner).contentType(MediaType.APPLICATION_JSON)
-                .content(json(Map.of("name", "Changed", "city", "Galle"))))
+                .content(json(Map.of("name", "Changed", "cityId", 31))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.information.categoryIds").isEmpty());
     }
 
@@ -99,12 +99,12 @@ class I_BusinessIntegrationTests extends PostgresTestSupport {
         String name = uniqueName();
         for (java.util.List<Integer> ids : java.util.List.of(java.util.List.of(1, 1), java.util.List.of(0),
                 java.util.List.of(999), java.util.List.of(1, 2, 3, 4))) {
-            Map<String, Object> info = Map.of("name", "Invalid", "city", "Colombo", "categoryIds", ids);
+            Map<String, Object> info = Map.of("name", "Invalid", "cityId", 1, "categoryIds", ids);
             mvc.perform(as(post("/api/v1/businesses"), owner).contentType(MediaType.APPLICATION_JSON)
                     .content(json(Map.of("uniqueName", name, "information", info))))
                     .andExpect(status().isBadRequest());
         }
-        Map<String, Object> info = Map.of("name", "Valid", "city", "Colombo", "categoryIds", java.util.List.of(1));
+        Map<String, Object> info = Map.of("name", "Valid", "cityId", 1, "categoryIds", java.util.List.of(1));
         mvc.perform(as(post("/api/v1/businesses"), owner).contentType(MediaType.APPLICATION_JSON)
                 .content(json(Map.of("uniqueName", name, "information", info))))
                 .andExpect(status().isCreated());
@@ -126,10 +126,13 @@ class I_BusinessIntegrationTests extends PostgresTestSupport {
         mvc.perform(as(get("/api/v1/businesses/me"), owner)).andExpect(status().isOk());
         mvc.perform(get("/api/v1/businesses/" + name)).andExpect(status().isOk());
         mvc.perform(as(put("/api/v1/businesses/me"), owner).contentType(MediaType.APPLICATION_JSON)
-                .content(json(Map.of("name", "Updated", "city", "Galle", "uniqueName", "changed", "status", "DISABLED", "id", 999, "addressLine1", "123 Main Street", "addressLine2", "Floor 2"))))
+                .content(json(Map.of("name", "Updated", "cityId", 31, "uniqueName", "changed", "status", "DISABLED", "id", 999, "addressLine1", "123 Main Street", "addressLine2", "Floor 2"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.uniqueName").value(name))
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
-                .andExpect(jsonPath("$.information.city").value("Galle"));
+                .andExpect(jsonPath("$.information.city").value("Galle"))
+                .andExpect(jsonPath("$.information.cityId").value(31))
+                .andExpect(jsonPath("$.information.districtId").value(7))
+                .andExpect(jsonPath("$.information.provinceId").value(3));
         mvc.perform(as(get("/api/v1/businesses/me"), owner))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.information.addressLine1").value("123 Main Street"))
@@ -168,11 +171,12 @@ class I_BusinessIntegrationTests extends PostgresTestSupport {
                     .andExpect(status().isBadRequest());
         }
         for (Map<String, Object> info : java.util.List.of(
-                Map.<String, Object>of("name", "Test"), Map.<String, Object>of("name", " ", "city", "Colombo"),
-                Map.<String, Object>of("name", "Test", "city", " "),
-                Map.<String, Object>of("name", "Test", "city", "Colombo", "latitude", 91),
-                Map.<String, Object>of("name", "Test", "city", "Colombo", "longitude", -181),
-                Map.<String, Object>of("name", "Test", "city", "Colombo", "email", "invalid"))) {
+                Map.<String, Object>of("name", "Test"), Map.<String, Object>of("name", " ", "cityId", 1),
+                Map.<String, Object>of("name", "Test", "cityId", 0),
+                Map.<String, Object>of("name", "Test", "cityId", 999),
+                Map.<String, Object>of("name", "Test", "cityId", 1, "latitude", 91),
+                Map.<String, Object>of("name", "Test", "cityId", 1, "longitude", -181),
+                Map.<String, Object>of("name", "Test", "cityId", 1, "email", "invalid"))) {
             mvc.perform(as(post("/api/v1/businesses"), owner).contentType(MediaType.APPLICATION_JSON)
                     .content(json(Map.of("uniqueName", uniqueName(), "information", info))))
                     .andExpect(status().isBadRequest());
@@ -221,7 +225,7 @@ class I_BusinessIntegrationTests extends PostgresTestSupport {
     void failedRegistrationRollsBackInsertedBusiness() {
         Account owner = account();
         String name = uniqueName();
-        BusinessInformation info = mapper.readValue(json(information()), BusinessInformation.class);
+        BusinessInformationRequest info = mapper.readValue(json(information()), BusinessInformationRequest.class);
         org.mockito.Mockito.doAnswer(call -> {
             Business business = call.getArgument(0);
             entityManager.persist(business);
@@ -253,7 +257,7 @@ class I_BusinessIntegrationTests extends PostgresTestSupport {
     @Test
     void concurrentRegistrationForOneOwnerCreatesExactlyOneBusiness() throws Exception {
         Account owner = account();
-        BusinessInformation info = mapper.readValue(json(information()), BusinessInformation.class);
+        BusinessInformationRequest info = mapper.readValue(json(information()), BusinessInformationRequest.class);
         CountDownLatch start = new CountDownLatch(1);
         Callable<Boolean> action = () -> {
             assertTrue(start.await(10, TimeUnit.SECONDS));

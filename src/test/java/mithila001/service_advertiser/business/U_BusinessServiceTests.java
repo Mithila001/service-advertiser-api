@@ -14,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 import mithila001.service_advertiser.business.dto.*;
 import mithila001.service_advertiser.user.*;
+import mithila001.service_advertiser.location.*;
 
 @ExtendWith(MockitoExtension.class)
 class U_BusinessServiceTests {
@@ -21,15 +22,25 @@ class U_BusinessServiceTests {
     @Mock UserRepository users;
     @Mock RoleRepository roles;
     @Mock CategoryService categories;
+    @Mock LocationCatalogService locations;
+    @Mock City city;
+    @Mock District district;
+    @Mock Province province;
     BusinessService service;
     User user;
     final Clock clock = Clock.fixed(Instant.parse("2026-10-17T10:00:00Z"), ZoneOffset.UTC);
-    final BusinessInformation info = new BusinessInformation("Display", null, null, null, null,
-            null, null, "Colombo", null, null, null, null, null, null);
+    final BusinessInformationRequest info = new BusinessInformationRequest("Display", null, null, null, null,
+            null, null, 1, null, null, null, null, null);
 
     @BeforeEach
     void setup() {
-        service = new BusinessService(businesses, users, roles, clock, categories);
+        service = new BusinessService(businesses, users, roles, clock, categories, locations);
+        lenient().when(locations.requireCity(1)).thenReturn(city);
+        lenient().when(city.getName()).thenReturn("Colombo");
+        lenient().when(city.getDistrict()).thenReturn(district);
+        lenient().when(district.getName()).thenReturn("Colombo");
+        lenient().when(district.getProvince()).thenReturn(province);
+        lenient().when(province.getName()).thenReturn("Western");
         user = new User();
         user.setId(1L);
         user.setStatus(UserStatus.ACTIVE);
@@ -85,7 +96,7 @@ class U_BusinessServiceTests {
     @Test
     void updatesOnlyOwnedBusinessAndDeletesAfterClearingForeignKey() {
         user.setBusinessId(7);
-        Business business = new Business("immutable_name", info, LocalDateTime.now(clock).minusDays(1));
+        Business business = new Business("immutable_name", info, city, LocalDateTime.now(clock).minusDays(1));
         when(businesses.findById(7)).thenReturn(Optional.of(business));
         BusinessResponse result = service.update(1L, info);
         assertEquals("immutable_name", result.uniqueName());

@@ -5,7 +5,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.domain.*;
 
-public interface ItemRepository extends JpaRepository<Item, Long> {
+public interface ItemRepository extends JpaRepository<Item, Long>, JpaSpecificationExecutor<Item> {
     long countByBusinessId(Integer businessId);
     List<Item> findByBusinessIdOrderByIdAsc(Integer businessId);
     Optional<Item> findByIdAndBusinessId(Long id, Integer businessId);
