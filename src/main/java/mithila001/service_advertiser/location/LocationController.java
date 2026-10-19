@@ -34,29 +34,27 @@ public class LocationController {
     })
     @GetMapping("/districts")
     public List<DistrictResponse> districts(
-            @Parameter(description = "Filter by catalog province ID. Combined location filters must describe the same hierarchy.")
+            @Parameter(description = "Filter by an existing catalog province ID.")
             @RequestParam(required = false) Integer provinceId) {
         return service.districts(provinceId);
     }
 
     @Operation(summary = "Search cities", description =
-            "Case-insensitive literal substring search of city names, up to 150 characters after trimming. " +
-            "Optional district and province must exist and belong to the same hierarchy. Results are ordered " +
-            "by name, then ID.")
+            "Returns cities ordered by name, then ID. District and province filters must belong to the same hierarchy.")
     @ApiResponses({
         @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400")
     })
     @GetMapping("/cities")
     public PageResponse<CityResponse> cities(
-            @Parameter(description = "Trimmed, case-insensitive literal substring; at most 150 characters.")
+            @Parameter(description = "Case-insensitive city name substring; trimmed, maximum 150 characters. No wildcard matching.")
             @RequestParam(required = false) String q,
-            @Parameter(description = "Filter by catalog district ID. Combined location filters must describe the same hierarchy.")
+            @Parameter(description = "Filter by an existing catalog district ID.")
             @RequestParam(required = false) Integer districtId,
-            @Parameter(description = "Filter by catalog province ID. Combined location filters must describe the same hierarchy.")
+            @Parameter(description = "Filter by an existing catalog province ID.")
             @RequestParam(required = false) Integer provinceId,
-            @Parameter(description = "Zero-based page number; defaults to 0. page * size must not exceed the configured maximum offset (default 10000).")
+            @Parameter(description = "Page number, starting at 0. See the pagination limits above.")
             @RequestParam(required = false) Integer page,
-            @Parameter(description = "Page size; defaults to the configured size (10), with a configured maximum (100). Minimum 1.")
+            @Parameter(description = "Results per page; minimum 1. See the pagination defaults and limits above.")
             @RequestParam(required = false) Integer size) {
         return service.cities(q, districtId, provinceId, page, size);
     }

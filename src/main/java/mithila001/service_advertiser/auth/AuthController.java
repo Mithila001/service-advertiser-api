@@ -37,7 +37,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Register an account", description =
-            "Creates a CUSTOMER account. Does not log in; call login separately.")
+            "Creates a CUSTOMER account. Log in separately to obtain tokens.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Account created"),
         @ApiResponse(responseCode = "409", ref = "#/components/responses/Error409")
@@ -48,7 +48,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Log in", description =
-            "Returns an access JWT and an opaque refresh token. Token responses use Cache-Control: no-store.")
+            "Returns an access JWT and a refresh token. Do not cache token responses.")
     @ApiResponses({
         @ApiResponse(responseCode = "401", ref = "#/components/responses/Error401")
     })
@@ -58,8 +58,8 @@ public class AuthController {
     }
 
     @Operation(summary = "Refresh a session", description =
-            "Use the current refresh token once. Replace both returned tokens. Session expiry is unchanged. " +
-            "Reuse revokes the session; serialize refresh requests.")
+            "Use each refresh token once and save both new tokens. Session expiry is unchanged. " +
+            "Reusing a token revokes the session; send one refresh request at a time.")
     @ApiResponses({
         @ApiResponse(responseCode = "401", ref = "#/components/responses/Error401")
     })
@@ -70,7 +70,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Log out a session", description =
-            "Revokes refresh tokens for this session. Unknown or revoked well-formed tokens also succeed. " +
+            "Revokes the session's refresh tokens. Validly formatted unknown or revoked tokens also succeed. " +
             "Access JWTs remain valid until expiry.")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Session logged out; no response body", content = @Content)

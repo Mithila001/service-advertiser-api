@@ -17,7 +17,7 @@ import mithila001.service_advertiser.business.dto.BusinessModerationResponse;
 import mithila001.service_advertiser.business.dto.BusinessResponse;
 import mithila001.service_advertiser.common.PageResponse;
 
-@Tag(name = "Business moderation", description = "Requires an active ADMIN account and an access JWT with the ADMIN role.")
+@Tag(name = "Business moderation", description = "Requires an active ADMIN account and a token with the ADMIN role.")
 @ApiResponses({
     @ApiResponse(responseCode = "401", ref = "#/components/responses/Error401"),
     @ApiResponse(responseCode = "403", ref = "#/components/responses/Error403"),
@@ -33,21 +33,21 @@ public class BusinessModerationController {
     public BusinessModerationController(BusinessModerationService service) { this.service = service; }
 
     @Operation(summary = "List suspended businesses", description =
-            "Paged results ordered by updatedAt descending, then ID descending.")
+            "Ordered by most recently updated, then highest ID.")
     @ApiResponses({
         @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400")
     })
     @GetMapping("/suspended")
     public PageResponse<BusinessResponse> suspended(@AuthenticationPrincipal Jwt jwt,
-            @Parameter(description = "Zero-based page number; defaults to 0. page * size must not exceed the configured maximum offset (default 10000).")
+            @Parameter(description = "Page number, starting at 0. See the pagination limits above.")
             @RequestParam(required = false) Integer page,
-            @Parameter(description = "Page size; defaults to the configured size (10), with a configured maximum (100). Minimum 1.")
+            @Parameter(description = "Results per page; minimum 1. See the pagination defaults and limits above.")
             @RequestParam(required = false) Integer size) {
         return service.suspended(Long.valueOf(jwt.getSubject()), page, size);
     }
 
     @Operation(summary = "Get business moderation history", description =
-            "Returns the audit history for an existing business, ordered by creation time descending, then ID descending.")
+            "Returns audit events, newest first, then highest ID. Unknown businesses return 404.")
     @ApiResponses({
         @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400"),
         @ApiResponse(responseCode = "404", ref = "#/components/responses/Error404")
@@ -59,8 +59,8 @@ public class BusinessModerationController {
     }
 
     @Operation(summary = "Suspend a business", description =
-            "Changes an ACTIVE business to SUSPENDED and records an audit event. Request body and reason are " +
-            "optional. Public profiles and items become hidden; owner writes are blocked.")
+            "Suspends an ACTIVE business and records an audit event. Request body and reason are " +
+            "optional. Hides its public profile and items, and blocks owner changes.")
     @ApiResponses({
         @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400"),
         @ApiResponse(responseCode = "404", ref = "#/components/responses/Error404"),
@@ -73,7 +73,7 @@ public class BusinessModerationController {
     }
 
     @Operation(summary = "Reactivate a suspended business", description =
-            "Changes a SUSPENDED business to ACTIVE and records an audit event. Request body and reason are " +
+            "Reactivates a SUSPENDED business and records an audit event. Request body and reason are " +
             "optional.")
     @ApiResponses({
         @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400"),

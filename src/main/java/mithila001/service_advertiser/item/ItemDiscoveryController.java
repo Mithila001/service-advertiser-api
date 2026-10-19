@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import mithila001.service_advertiser.common.PageResponse;
 import mithila001.service_advertiser.item.dto.ItemResponse;
 
-@Tag(name = "Items", description = "Public products and services, and management of the current business's items.")
+@Tag(name = "Items", description = "Public products and services, and your business's items.")
 @ApiResponses({
     @ApiResponse(responseCode = "500", ref = "#/components/responses/Error500")
 })
@@ -26,38 +26,35 @@ public class ItemDiscoveryController {
     public ItemDiscoveryController(ItemDiscoveryService service) { this.service = service; }
 
     @Operation(summary = "Search items", description =
-            "Public search of ACTIVE items belonging to ACTIVE businesses. q is a trimmed, case-insensitive " +
-            "literal title substring (maximum 150 characters). Categories match ANY selected ID; other " +
-            "filters combine with AND. Location IDs must exist and form a consistent hierarchy. Default sort " +
-            "is name,asc (item title), with ID breaking ties. Unpriced items sort first for ascending price " +
-            "and last for descending price. Any minPrice, including zero, excludes unpriced items; a maxPrice " +
-            "alone includes them.")
+            "Returns ACTIVE items from ACTIVE businesses. Different filters combine with AND. " +
+            "Location IDs must belong to the same hierarchy.")
     @ApiResponses({
         @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400")
     })
     @GetMapping
     public PageResponse<ItemResponse> search(
-            @Parameter(description = "Trimmed, case-insensitive literal substring; at most 150 characters.")
+            @Parameter(description = "Case-insensitive title substring; trimmed, maximum 150 characters. No wildcard matching.")
             @RequestParam(required = false) String q,
-            @Parameter(description = "Match ANY selected category. IDs must be known, positive, and unique. Supply comma-separated IDs or repeat the parameter; omit for all categories.")
+            @Parameter(description = "Matches any selected category. Use unique, positive catalog IDs, comma-separated or repeated. Omit for all categories.")
             @RequestParam(required = false) List<Integer> categoryIds,
-            @Parameter(description = "Filter by catalog city ID. Combined location filters must describe the same hierarchy.")
+            @Parameter(description = "Filter by an existing catalog city ID.")
             @RequestParam(required = false) Integer cityId,
-            @Parameter(description = "Filter by catalog district ID. Combined location filters must describe the same hierarchy.")
+            @Parameter(description = "Filter by an existing catalog district ID.")
             @RequestParam(required = false) Integer districtId,
-            @Parameter(description = "Filter by catalog province ID. Combined location filters must describe the same hierarchy.")
+            @Parameter(description = "Filter by an existing catalog province ID.")
             @RequestParam(required = false) Integer provinceId,
             @Parameter(description = "Filter products or services.")
             @RequestParam(required = false) ItemType type,
-            @Parameter(description = "Inclusive minimum price in LKR, nonnegative, at most two fractional digits. Excludes unpriced items, even when zero.")
+            @Parameter(description = "Minimum price in LKR, inclusive; nonnegative, up to 2 decimal places. Excludes unpriced items, including when set to 0.")
             @RequestParam(required = false) BigDecimal minPrice,
-            @Parameter(description = "Inclusive maximum price in LKR, nonnegative, at most two fractional digits; must be at least minPrice. Includes unpriced items when minPrice is omitted.")
+            @Parameter(description = "Maximum price in LKR, inclusive; nonnegative, up to 2 decimal places, at least minPrice. Includes unpriced items if minPrice is omitted.")
             @RequestParam(required = false) BigDecimal maxPrice,
-            @Parameter(description = "Sort field and direction; defaults to name,asc. For items, name sorts by title.", schema = @Schema(allowableValues = {"name,asc", "name,desc", "price,asc", "price,desc"}))
+            @Parameter(description = "Default: name,asc (item title). ID breaks ties. Unpriced items sort first for price,asc and last for price,desc.",
+                    schema = @Schema(allowableValues = {"name,asc", "name,desc", "price,asc", "price,desc"}))
             @RequestParam(required = false) String sort,
-            @Parameter(description = "Zero-based page number; defaults to 0. page * size must not exceed the configured maximum offset (default 10000).")
+            @Parameter(description = "Page number, starting at 0. See the pagination limits above.")
             @RequestParam(required = false) Integer page,
-            @Parameter(description = "Page size; defaults to the configured size (10), with a configured maximum (100). Minimum 1.")
+            @Parameter(description = "Results per page; minimum 1. See the pagination defaults and limits above.")
             @RequestParam(required = false) Integer size) {
         return service.search(q, categoryIds, cityId, districtId, provinceId, type, minPrice, maxPrice, sort, page, size);
     }

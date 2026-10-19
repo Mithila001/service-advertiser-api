@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import mithila001.service_advertiser.business.dto.BusinessResponse;
 import mithila001.service_advertiser.common.PageResponse;
 
-@Tag(name = "Businesses", description = "Public business profiles and management of the current account's business.")
+@Tag(name = "Businesses", description = "Public business profiles and your business.")
 @ApiResponses({
     @ApiResponse(responseCode = "500", ref = "#/components/responses/Error500")
 })
@@ -25,31 +25,29 @@ public class BusinessDiscoveryController {
     public BusinessDiscoveryController(BusinessDiscoveryService service) { this.service = service; }
 
     @Operation(summary = "Search businesses", description =
-            "Public search of ACTIVE businesses. q is a trimmed, case-insensitive literal substring of the " +
-            "name (maximum 150 characters). Categories match ANY selected ID; other filters combine with AND. " +
-            "Location IDs must exist and describe a consistent hierarchy. Default sort is name,asc; ID breaks " +
-            "ties.")
+            "Returns ACTIVE businesses. Different filters combine with AND. " +
+            "Location IDs must belong to the same hierarchy.")
     @ApiResponses({
         @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400")
     })
     @GetMapping
     public PageResponse<BusinessResponse> search(
-            @Parameter(description = "Trimmed, case-insensitive literal substring; at most 150 characters.")
+            @Parameter(description = "Case-insensitive business name substring; trimmed, maximum 150 characters. No wildcard matching.")
             @RequestParam(required = false) String q,
-            @Parameter(description = "Match ANY selected category. IDs must be known, positive, and unique. Supply comma-separated IDs or repeat the parameter; omit for all categories.")
+            @Parameter(description = "Matches any selected category. Use unique, positive catalog IDs, comma-separated or repeated. Omit for all categories.")
             @RequestParam(required = false) List<Integer> categoryIds,
-            @Parameter(description = "Filter by catalog city ID. Combined location filters must describe the same hierarchy.")
+            @Parameter(description = "Filter by an existing catalog city ID.")
             @RequestParam(required = false) Integer cityId,
-            @Parameter(description = "Filter by catalog district ID. Combined location filters must describe the same hierarchy.")
+            @Parameter(description = "Filter by an existing catalog district ID.")
             @RequestParam(required = false) Integer districtId,
-            @Parameter(description = "Filter by catalog province ID. Combined location filters must describe the same hierarchy.")
+            @Parameter(description = "Filter by an existing catalog province ID.")
             @RequestParam(required = false) Integer provinceId,
-            @Parameter(description = "Sort by business name; defaults to name,asc.",
+            @Parameter(description = "Sort by business name. Default: name,asc. ID breaks ties.",
                     schema = @Schema(allowableValues = {"name,asc", "name,desc"}))
             @RequestParam(required = false) String sort,
-            @Parameter(description = "Zero-based page number; defaults to 0. page * size must not exceed the configured maximum offset (default 10000).")
+            @Parameter(description = "Page number, starting at 0. See the pagination limits above.")
             @RequestParam(required = false) Integer page,
-            @Parameter(description = "Page size; defaults to the configured size (10), with a configured maximum (100). Minimum 1.")
+            @Parameter(description = "Results per page; minimum 1. See the pagination defaults and limits above.")
             @RequestParam(required = false) Integer size) {
         return service.search(q, categoryIds, cityId, districtId, provinceId, sort, page, size);
     }

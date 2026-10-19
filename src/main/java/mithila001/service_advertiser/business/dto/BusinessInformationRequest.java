@@ -12,7 +12,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Schema(description = "Editable business information. Name and a valid catalog cityId are required. PUT clears omitted optional fields and categories. Category IDs must be positive, unique business category IDs; default maximum 3 (configurable).",
+@Schema(description = "Business information. Requires name and a catalog cityId. Use unique, positive business category IDs; default maximum 3 (configurable).",
         example = "{\"name\":\"Colombo Services\",\"description\":\"Local services\",\"phone\":\"+94112345678\",\"cityId\":1,\"categoryIds\":[]}")
 public record BusinessInformationRequest(
         @NotBlank @Size(max = 150) String name,

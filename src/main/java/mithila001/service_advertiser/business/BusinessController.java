@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import mithila001.service_advertiser.business.dto.*;
 
-@Tag(name = "Businesses", description = "Public business profiles and management of the current account's business.")
+@Tag(name = "Businesses", description = "Public business profiles and your business.")
 @ApiResponses({
     @ApiResponse(responseCode = "500", ref = "#/components/responses/Error500")
 })
@@ -26,8 +26,8 @@ public class BusinessController {
     public BusinessController(BusinessService service) { this.service = service; }
 
     @Operation(summary = "Register your business", description =
-            "An active CUSTOMER can own one business. Creates an ACTIVE business and changes the account role " +
-            "to PROVIDER. Refresh or log in to obtain the new JWT role.")
+            "Requires an active CUSTOMER with no business. Creates an ACTIVE business and changes your role " +
+            "to PROVIDER. Refresh or log in to update your token's role.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Business created"),
@@ -43,8 +43,7 @@ public class BusinessController {
     }
 
     @Operation(summary = "Get your business", description =
-            "Returns your business, including when it is suspended. Requires an active account with business " +
-            "ownership.")
+            "Returns your business, even when suspended. Requires an active account that owns a business.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
         @ApiResponse(responseCode = "401", ref = "#/components/responses/Error401"),
@@ -57,9 +56,8 @@ public class BusinessController {
     }
 
     @Operation(summary = "Replace your business information", description =
-            "Requires an active account and ACTIVE owned business. Send the information object directly. Name " +
-            "and cityId are required; omitted optional fields and categories are cleared. The unique name " +
-            "cannot change.")
+            "Requires an active account and an ACTIVE owned business. Omitted optional fields and categories " +
+            "are cleared. The unique name cannot change.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
         @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400"),
@@ -89,8 +87,7 @@ public class BusinessController {
     }
 
     @Operation(summary = "Get a public business profile", description =
-            "Only ACTIVE businesses are publicly visible. Suspended, disabled, and unknown businesses return " +
-            "404.")
+            "Returns an ACTIVE business. Unknown or inactive businesses return 404.")
     @ApiResponses({
         @ApiResponse(responseCode = "404", ref = "#/components/responses/Error404")
     })

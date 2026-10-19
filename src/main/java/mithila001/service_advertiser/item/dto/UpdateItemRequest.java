@@ -8,7 +8,7 @@ import jakarta.validation.constraints.*;
 import java.util.List;
 import mithila001.service_advertiser.item.*;
 
-@Schema(description = "Partial update: omit fields to preserve them. Explicit null clears description or price. Null title, type, status, or categoryIds is invalid. An empty categoryIds array clears categories; default maximum 2 (configurable). Prices are in LKR.",
+@Schema(description = "Omitted fields are preserved. Explicit null clears description or price; other fields reject null. Empty categoryIds clears categories. Use unique, positive item category IDs; default maximum 2 (configurable).",
         example = "{\"status\":\"INACTIVE\",\"price\":null,\"categoryIds\":[]}")
 public class UpdateItemRequest {
     @Size(max = 150) @Pattern(regexp = "(?s).*\\S.*")

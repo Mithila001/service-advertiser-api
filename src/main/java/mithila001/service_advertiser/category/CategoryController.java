@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Categories", description = "Public predefined category catalogs. Use business and item category IDs with their corresponding resource type.")
+@Tag(name = "Categories", description = "Public category catalogs. Business and item category IDs are not interchangeable.")
 @ApiResponses({
     @ApiResponse(responseCode = "500", ref = "#/components/responses/Error500")
 })

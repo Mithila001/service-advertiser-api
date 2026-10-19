@@ -21,14 +21,14 @@ public class OpenApiConfig {
     OpenAPI serviceAdvertiserApi() {
         var components = new Components().addSecuritySchemes("bearerAuth", new SecurityScheme()
                 .type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")
-                .description("Log in and paste the accessToken here, without the Bearer prefix."));
+                .description("Paste your accessToken without the Bearer prefix."));
         for (HttpStatus status : new HttpStatus[] { HttpStatus.BAD_REQUEST, HttpStatus.UNAUTHORIZED,
                 HttpStatus.FORBIDDEN, HttpStatus.NOT_FOUND, HttpStatus.CONFLICT, HttpStatus.INTERNAL_SERVER_ERROR }) {
             components.addResponses("Error" + status.value(), new ApiResponse().description(switch (status) {
-                case BAD_REQUEST -> "Invalid JSON, request fields, query parameters, or catalog selection.";
+                case BAD_REQUEST -> "Invalid request data or catalog IDs.";
                 case UNAUTHORIZED -> "Missing or invalid access token, credentials, or refresh token.";
-                case FORBIDDEN -> "Account state, role, ownership, or business state does not permit this action.";
-                case NOT_FOUND -> "The requested resource is unavailable or does not belong to the current owner.";
+                case FORBIDDEN -> "Your account, role, or business does not permit this action.";
+                case NOT_FOUND -> "Resource not found or not accessible to you.";
                 case CONFLICT -> "Duplicate registration, item limit reached, or incompatible business state.";
                 default -> "Unexpected server error.";
             }).content(new Content().addMediaType("application/json", new MediaType()
@@ -38,20 +38,14 @@ public class OpenApiConfig {
                 .description("""
                         Discover businesses, products, and services, and manage your own business and items.
 
-                        **Authentication:** Register an account, then log in at `POST /api/v1/auth/login`.
-                        Copy `accessToken` into **Authorize** without the `Bearer` prefix. Lock icons mark
-                        protected operations. Public discovery and catalogs need no token. Moderation requires
-                        an active ADMIN account. Refresh rotates both tokens; replace both after each refresh.
-                        Reusing a consumed refresh token revokes its session. Logout revokes refresh tokens;
-                        an existing access token remains valid until expiry.
+                        **Authentication:** Log in at `POST /api/v1/auth/login`, then paste `accessToken`
+                        into **Authorize** without the `Bearer` prefix. Public search and catalogs need no token.
 
-                        **Pagination:** `page` starts at 0. Default size is 10, maximum size is 100,
-                        and `page * size` must not exceed 10000 by default. Deployment settings can change
-                        these limits. Paged responses contain `content`, `page`, `size`, `totalElements`, and `totalPages`.
+                        **Pagination:** `page` defaults to 0. `size` defaults to 10 and must be between 1 and 100.
+                        `page * size` must not exceed 10000. These defaults and limits are deployment configurable.
 
-                        **Errors:** JSON errors contain `status`, `error`, `message`, and `fieldErrors`.
-                        Validation errors may include field-specific messages in `fieldErrors`.
-                        Prices are in Sri Lankan rupees (LKR); null means unspecified, and zero means free.
+                        **Errors:** JSON errors include `status`, `error`, `message`, and `fieldErrors`.
+                        Check `fieldErrors` for validation details.
                         """));
     }
 

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import mithila001.service_advertiser.item.dto.*;
 import mithila001.service_advertiser.common.PageResponse;
 
-@Tag(name = "Items", description = "Public products and services, and management of the current business's items.")
+@Tag(name = "Items", description = "Public products and services, and your business's items.")
 @ApiResponses({
     @ApiResponse(responseCode = "500", ref = "#/components/responses/Error500")
 })
@@ -27,8 +27,8 @@ public class ItemController {
     public ItemController(ItemService service) { this.service = service; }
 
     @Operation(summary = "Create an item", description =
-            "Requires an active PROVIDER account with an ACTIVE owned business. Creates an ACTIVE item. " +
-            "Default business limit is 10 items, including inactive items; configurable per deployment.")
+            "Creates an ACTIVE item. Requires an active PROVIDER and an ACTIVE owned business. " +
+            "Default limit: 10 items per business, including inactive items (configurable).")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Item created"),
@@ -43,8 +43,8 @@ public class ItemController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(Long.valueOf(jwt.getSubject()), request));
     }
     @Operation(summary = "List your items", description =
-            "Requires an active PROVIDER with an owned business. Includes inactive items, ordered by ID. " +
-            "Available even when the business is suspended or disabled.")
+            "Returns all your items, including inactive items, ordered by ID. Requires an active PROVIDER. " +
+            "Available even when your business is suspended or disabled.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
         @ApiResponse(responseCode = "401", ref = "#/components/responses/Error401"),
@@ -56,9 +56,8 @@ public class ItemController {
         return service.own(Long.valueOf(jwt.getSubject()));
     }
     @Operation(summary = "Partially update your item", description =
-            "Requires an active PROVIDER with an ACTIVE owned business. Omitted fields are preserved. " +
-            "Explicit null clears description or price; null title, type, status, or categoryIds is invalid. " +
-            "An empty categoryIds array clears categories. Another owner's item returns 404.")
+            "Requires an active PROVIDER and an ACTIVE owned business. Omitted fields are preserved; " +
+            "see the request schema for clearing fields. Another owner's item returns 404.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
         @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400"),
@@ -72,7 +71,7 @@ public class ItemController {
         return service.update(Long.valueOf(jwt.getSubject()), id, request);
     }
     @Operation(summary = "Delete your item", description =
-            "Permanently deletes an item from your ACTIVE owned business. Requires an active PROVIDER. " +
+            "Permanently deletes your item. Requires an active PROVIDER and an ACTIVE owned business. " +
             "Another owner's item returns 404.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
@@ -103,9 +102,9 @@ public class ItemController {
     })
     @GetMapping("/businesses/{uniqueName}/items")
     public PageResponse<ItemResponse> publicItems(@PathVariable String uniqueName,
-            @Parameter(description = "Zero-based page number; defaults to 0. page * size must not exceed the configured maximum offset (default 10000).")
+            @Parameter(description = "Page number, starting at 0. See the pagination limits above.")
             @RequestParam(required = false) Integer page,
-            @Parameter(description = "Page size; defaults to the configured size (10), with a configured maximum (100). Minimum 1.")
+            @Parameter(description = "Results per page; minimum 1. See the pagination defaults and limits above.")
             @RequestParam(required = false) Integer size) {
         return service.publicItems(uniqueName, page, size);
     }
