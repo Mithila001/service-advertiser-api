@@ -1,5 +1,8 @@
 package mithila001.service_advertiser.auth;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -29,6 +32,7 @@ import mithila001.service_advertiser.user.UserStatus;
 
 @Service
 public class AuthenticationService {
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
     private final UserRepository users;
     private final RefreshTokenRepository refreshTokens;
     private final PasswordEncoder passwords;
@@ -54,6 +58,8 @@ public class AuthenticationService {
         User user = users.findByEmail(request.email().trim().toLowerCase(Locale.ROOT)).orElse(null);
         boolean matches = passwords.matches(request.password(), user == null ? dummyHash : user.getPasswordHash());
         if (!matches || user == null || user.getStatus() != UserStatus.ACTIVE) {
+            log.atWarn().addKeyValue("event", "login_failure")
+                    .addKeyValue("reason", "invalid_credentials_or_inactive").log("Authentication rejected");
             throw new BadCredentialsException("Invalid email or password");
         }
         Instant now = clock.instant();
@@ -74,6 +80,10 @@ public class AuthenticationService {
         }
         if (token.getUsedAt() != null || user.getStatus() != UserStatus.ACTIVE) {
             revoke(token.getFamilyId(), now);
+            log.atWarn().addKeyValue("event", "refresh_security")
+                    .addKeyValue("reason", token.getUsedAt() != null ? "token_replay" : "inactive_account")
+                    .addKeyValue("user_id", userId).addKeyValue("family_id", token.getFamilyId())
+                    .log("Refresh family revocation requested");
             // Commit replay/inactive-account revocation even though the API returns 401.
             throw new InvalidRefreshTokenException();
         }

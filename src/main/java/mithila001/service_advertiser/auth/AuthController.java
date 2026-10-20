@@ -1,5 +1,8 @@
 package mithila001.service_advertiser.auth;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,6 +31,7 @@ import mithila001.service_advertiser.auth.dto.TokenResponse;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final RegistrationService registrationService;
     private final AuthenticationService authenticationService;
 
@@ -54,7 +58,9 @@ public class AuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(authenticationService.login(request));
+        var tokens = authenticationService.login(request);
+        log.atInfo().addKeyValue("event", "login_success").log("Authentication succeeded");
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(tokens);
     }
 
     @Operation(summary = "Refresh a session", description =

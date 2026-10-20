@@ -1,0 +1,23 @@
+discovery.docker "application" {
+  host = "unix:///var/run/docker.sock"
+  filter {
+    name = "label"
+    values = [
+      "com.docker.compose.project=service-advertiser-simulation",
+      "com.docker.compose.service=api",
+    ]
+  }
+}
+
+loki.source.docker "application" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.application.targets
+  labels     = { service_name = "service-advertiser", environment = "simulation", source = "docker" }
+  forward_to = [loki.write.application.receiver]
+}
+
+loki.write "application" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

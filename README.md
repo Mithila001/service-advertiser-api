@@ -347,3 +347,8 @@ Unsupported sort fields, unknown or duplicate category IDs, invalid location IDs
 and contradictory city/district/province filters return `400`. Businesses and
 items with legacy locations but no catalog city remain in unfiltered results and
 are omitted when a catalog location filter is used.
+## Logging
+
+Local development writes readable console output and rotated JSON files under
+`logs/`. See [logging conventions](docs/engineering/logging.md) and
+[optional Grafana/Loki operations](observability/README.md).

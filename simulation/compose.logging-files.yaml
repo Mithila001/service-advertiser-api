@@ -1,0 +1,9 @@
+services:
+  api:
+    environment:
+      LOGGING_FILE_NAME: /var/log/service-advertiser/service-advertiser.json
+    volumes:
+      - simulation_logs:/var/log/service-advertiser
+
+volumes:
+  simulation_logs:

@@ -46,6 +46,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({ BadCredentialsException.class, InvalidRefreshTokenException.class })
     public ResponseEntity<ErrorResponse> handleAuthentication(RuntimeException exception) {
+        if (exception instanceof InvalidRefreshTokenException) {
+            log.atWarn().addKeyValue("event", "refresh_rejected")
+                    .addKeyValue("reason", "invalid_refresh_token").log("Refresh rejected");
+        }
         return response(HttpStatus.UNAUTHORIZED, "Unauthorized", exception.getMessage(), Map.of());
     }
 
@@ -61,7 +65,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RoleNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleMissingRole(RoleNotFoundException exception) {
-        log.error("Registration role is missing", exception);
+        log.atError().addKeyValue("event", "missing_registration_role")
+                .setCause(exception).log("Registration role is missing");
         return internalError();
     }
 
@@ -83,7 +88,8 @@ public class GlobalExceptionHandler {
             return response(HttpStatus.CONFLICT, "Conflict", "Email is already registered", Map.of());
         }
 
-        log.error("Unexpected API error", exception);
+        log.atError().addKeyValue("event", "unexpected_error")
+                .setCause(exception).log("Unexpected API error");
         return internalError();
     }
 

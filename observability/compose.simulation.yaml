@@ -1,0 +1,7 @@
+services:
+  alloy:
+    # Read-only mounting does NOT restrict Docker API operations. Trusted local use only.
+    user: '0:0'
+    volumes:
+      - ./alloy-simulation.alloy:/etc/alloy/source.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro

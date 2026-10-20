@@ -1,5 +1,8 @@
 package mithila001.service_advertiser.business;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,6 +31,7 @@ import mithila001.service_advertiser.common.PageResponse;
 @RequestMapping("/api/v1/admin/businesses")
 @PreAuthorize("hasRole('ADMIN')")
 public class BusinessModerationController {
+    private static final Logger log = LoggerFactory.getLogger(BusinessModerationController.class);
     private final BusinessModerationService service;
 
     public BusinessModerationController(BusinessModerationService service) { this.service = service; }
@@ -69,7 +73,10 @@ public class BusinessModerationController {
     @PostMapping("/{businessId}/suspend")
     public BusinessResponse suspend(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer businessId,
             @Valid @RequestBody(required = false) BusinessModerationRequest request) {
-        return service.suspend(Long.valueOf(jwt.getSubject()), businessId, request == null ? null : request.reason());
+        var business = service.suspend(Long.valueOf(jwt.getSubject()), businessId, request == null ? null : request.reason());
+        log.atInfo().addKeyValue("event", "business_suspended").addKeyValue("user_id", jwt.getSubject())
+                .addKeyValue("business_id", businessId).log("Business moderation completed");
+        return business;
     }
 
     @Operation(summary = "Reactivate a suspended business", description =
@@ -83,6 +90,9 @@ public class BusinessModerationController {
     @PostMapping("/{businessId}/activate")
     public BusinessResponse activate(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer businessId,
             @Valid @RequestBody(required = false) BusinessModerationRequest request) {
-        return service.activate(Long.valueOf(jwt.getSubject()), businessId, request == null ? null : request.reason());
+        var business = service.activate(Long.valueOf(jwt.getSubject()), businessId, request == null ? null : request.reason());
+        log.atInfo().addKeyValue("event", "business_activated").addKeyValue("user_id", jwt.getSubject())
+                .addKeyValue("business_id", businessId).log("Business moderation completed");
+        return business;
     }
 }

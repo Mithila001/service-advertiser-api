@@ -32,3 +32,10 @@ Prefer Spring Data JPA for database access. Use `JdbcTemplate` when JPA is not s
 
 - API descriptions, request/response details, validation rules, and examples are documented in controller and DTO annotations.
 - Shared authentication guidance, pagination rules, and standard error responses are configured in `OpenApiConfig`.
+
+### API Simulation
+
+- An isolated Docker Compose environment runs the application against its own PostgreSQL database and uses Locust to simulate API activity with synthetic accounts, businesses, and items.
+- The simulator communicates with the application through HTTP APIs and exercises registration, discovery, authentication, and business/item lifecycle flows.
+- Each authenticated virtual user manages its own JWT access token and rotating opaque refresh token; refresh timing uses the expiry duration returned by the API.
+- See `simulation/README.md` for setup, checks, reports, and reset instructions.

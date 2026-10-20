@@ -1,5 +1,8 @@
 package mithila001.service_advertiser.business;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,6 +24,7 @@ import mithila001.service_advertiser.business.dto.*;
 @RestController
 @RequestMapping("/api/v1/businesses")
 public class BusinessController {
+    private static final Logger log = LoggerFactory.getLogger(BusinessController.class);
     private final BusinessService service;
 
     public BusinessController(BusinessService service) { this.service = service; }
@@ -39,7 +43,10 @@ public class BusinessController {
     @PostMapping
     public ResponseEntity<BusinessResponse> register(@AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody RegisterBusinessRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.register(Long.valueOf(jwt.getSubject()), request));
+        var business = service.register(Long.valueOf(jwt.getSubject()), request);
+        log.atInfo().addKeyValue("event", "business_registered").addKeyValue("user_id", jwt.getSubject())
+                .addKeyValue("business_id", business.id()).log("Business registered");
+        return ResponseEntity.status(HttpStatus.CREATED).body(business);
     }
 
     @Operation(summary = "Get your business", description =
@@ -83,6 +90,8 @@ public class BusinessController {
     @DeleteMapping("/me")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt) {
         service.delete(Long.valueOf(jwt.getSubject()));
+        log.atInfo().addKeyValue("event", "business_deleted").addKeyValue("user_id", jwt.getSubject())
+                .log("Business deleted");
         return ResponseEntity.noContent().build();
     }
 

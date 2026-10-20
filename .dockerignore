@@ -4,6 +4,7 @@
 .codex
 .agents
 target
+logs
 simulation/runtime
 simulation/results
 **/__pycache__

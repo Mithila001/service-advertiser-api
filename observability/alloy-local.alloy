@@ -1,0 +1,34 @@
+local.file_match "application" {
+  path_targets = [{
+    __path__ = "/var/log/service-advertiser/service-advertiser.json",
+    service_name = "service-advertiser",
+    environment = "local",
+    source = "file",
+  }]
+}
+
+loki.source.file "application" {
+  targets    = local.file_match.application.targets
+  forward_to = [loki.process.application.receiver]
+}
+
+loki.process "application" {
+  stage.json {
+    expressions = { timestamp = "\"@timestamp\"" }
+  }
+  stage.timestamp {
+    source = "timestamp"
+    format = "RFC3339Nano"
+    action_on_failure = "skip"
+  }
+  stage.label_drop {
+    values = ["filename"]
+  }
+  forward_to = [loki.write.application.receiver]
+}
+
+loki.write "application" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

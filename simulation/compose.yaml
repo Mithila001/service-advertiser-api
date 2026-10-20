@@ -1,6 +1,13 @@
 name: service-advertiser-simulation
 
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 x-simulator: &simulator
+  logging: *logging
   image: locustio/locust:2.43.3
   working_dir: /mnt/locust
   volumes:
@@ -12,6 +19,7 @@ x-simulator: &simulator
 
 services:
   postgres:
+    logging: *logging
     image: postgres:18
     environment:
       POSTGRES_DB: service_advertiser_simulation
@@ -27,6 +35,7 @@ services:
       retries: 30
 
   api:
+    logging: *logging
     build:
       context: ..
       dockerfile: simulation/Dockerfile
@@ -40,6 +49,9 @@ services:
       JWT_AUDIENCE: service-advertiser-simulation-api
       JWT_ACCESS_LIFETIME: ${SIM_ACCESS_LIFETIME:-15m}
       JWT_REFRESH_LIFETIME: ${SIM_REFRESH_LIFETIME:-7d}
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: logstash
+      LOGGING_FILE_NAME: ""
+      SPRING_MAIN_BANNER_MODE: 'off'
       ITEMS_MAX_PER_BUSINESS: 10
       BUSINESS_MAX_CATEGORIES: 3
       ITEM_MAX_CATEGORIES: 2
@@ -49,7 +61,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: [CMD, curl, --fail, --silent, http://localhost:8080/api/v1/categories/business]
+      test: [CMD, curl, --fail, --silent, http://localhost:8080/actuator/health]
       interval: 5s
       timeout: 3s
       retries: 40

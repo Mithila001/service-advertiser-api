@@ -1,0 +1,53 @@
+name: service-advertiser-observability
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  loki:
+    image: grafana/loki:3.7.8
+    command: [-config.file=/etc/loki/config.yaml]
+    volumes:
+      - ./loki.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
+    logging: *logging
+    networks: [observability]
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD before starting observability}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    ports: ['127.0.0.1:3000:3000']
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana-datasource.yaml:/etc/grafana/provisioning/datasources/loki.yaml:ro
+    logging: *logging
+    networks: [observability, access]
+    depends_on: [loki]
+
+  alloy:
+    image: grafana/alloy:v1.20.1
+    command: [run, --storage.path=/var/lib/alloy/data, /etc/alloy/source.alloy]
+    volumes:
+      - alloy_data:/var/lib/alloy/data
+    logging: *logging
+    networks: [observability]
+    depends_on: [loki]
+
+networks:
+  observability:
+    internal: true
+  access: {}
+
+volumes:
+  loki_data:
+  grafana_data:
+  alloy_data:

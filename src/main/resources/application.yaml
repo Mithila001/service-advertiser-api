@@ -35,3 +35,32 @@ springdoc:
   paths-to-match: /api/v1/**
   default-produces-media-type: application/json
   override-with-generic-response: false
+
+logging:
+  file:
+    name: ${LOGGING_FILE_NAME:logs/service-advertiser.json}
+  structured:
+    format:
+      file: logstash
+  pattern:
+    level: '%5p [request_id=%X{request_id:-}] %kvp'
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 100MB
+      clean-history-on-start: true
+  level:
+    # SQL error details can contain submitted values; the advice owns API diagnostics.
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: 'OFF'
+    org.hibernate.orm.jdbc.error: 'OFF'
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never

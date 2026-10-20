@@ -1,0 +1,5 @@
+services:
+  alloy:
+    volumes:
+      - ./alloy-local.alloy:/etc/alloy/source.alloy:ro
+      - ../logs:/var/log/service-advertiser:ro
