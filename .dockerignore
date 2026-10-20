@@ -1,0 +1,9 @@
+.git
+.env
+.aws
+.codex
+.agents
+target
+simulation/runtime
+simulation/results
+**/__pycache__

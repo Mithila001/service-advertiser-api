@@ -1,0 +1,202 @@
+[
+  {
+    "base": "lotus_it", "name": "Lotus IT Solutions", "description": "Practical software and computer support for local businesses.",
+    "address": "12 Lake View Road", "categories": ["IT & Technology"], "locations": [["Colombo", "Colombo"], ["Kandy", "Kandy"]],
+    "items": [
+      {"title": "Small business website", "description": "Five page website with mobile layout and setup.", "type": "SERVICE", "categories": ["IT Services"], "price": [35000, 60000]},
+      {"title": "Office network setup", "description": "Router and workstation configuration for a small office.", "type": "SERVICE", "categories": ["IT Services"], "price": [8000, 15000]},
+      {"title": "Wireless keyboard", "description": "Compact keyboard with USB receiver.", "type": "PRODUCT", "categories": ["Computer Hardware"], "price": [2500, 4500]},
+      {"title": "Spreadsheet invoice template", "description": "Reusable local business invoice workbook.", "type": "PRODUCT", "categories": ["Digital Products"], "price": [500, 1500]}
+    ]
+  },
+  {
+    "base": "fixpoint", "name": "FixPoint Appliance Care", "description": "Household appliance diagnosis and repair.",
+    "address": "24 Station Road", "categories": ["Repair & Maintenance", "Electronics"], "locations": [["Maharagama", "Colombo"], ["Gampaha", "Gampaha"]],
+    "items": [
+      {"title": "Washing machine inspection", "description": "On-site inspection and written repair estimate.", "type": "SERVICE", "categories": ["Mechanical Services"], "price": [1500, 3000]},
+      {"title": "Refrigerator servicing", "description": "Cooling system inspection and routine servicing.", "type": "SERVICE", "categories": ["Mechanical Services"], "price": [3500, 6500]},
+      {"title": "Electric kettle", "description": "One litre countertop kettle.", "type": "PRODUCT", "categories": ["Appliances"], "price": [3000, 5500]},
+      {"title": "Fan repair", "description": "Bench repair of a household pedestal fan.", "type": "SERVICE", "categories": ["Electrical Services"], "price": [1200, 2500]}
+    ]
+  },
+  {
+    "base": "bright_learning", "name": "Bright Path Learning", "description": "Small group lessons and practical skills classes.",
+    "address": "8 School Lane", "categories": ["Education"], "locations": [["Kurunegala", "Kurunegala"], ["Kandy", "Kandy"]],
+    "items": [
+      {"title": "Mathematics group class", "description": "Monthly secondary school mathematics lessons.", "type": "SERVICE", "categories": ["Education & Training"], "price": [2000, 3500]},
+      {"title": "Spoken English workshop", "description": "Weekend communication practice workshop.", "type": "SERVICE", "categories": ["Education & Training"], "price": [1500, 3000]},
+      {"title": "Revision workbook", "description": "Printed mathematics exercises with worked answers.", "type": "PRODUCT", "categories": ["Books & Stationery"], "price": [450, 850]},
+      {"title": "Computer basics course", "description": "Four beginner sessions for everyday computer use.", "type": "SERVICE", "categories": ["Education & Training"], "price": [4500, 7500]}
+    ]
+  },
+  {
+    "base": "roadcare", "name": "RoadCare Auto Workshop", "description": "Routine vehicle maintenance and essential spare parts.",
+    "address": "31 Workshop Road", "categories": ["Automotive"], "locations": [["Negombo", "Gampaha"], ["Matara", "Matara"]],
+    "items": [
+      {"title": "Engine oil change", "description": "Labour for oil and filter replacement; oil quoted separately.", "type": "SERVICE", "categories": ["Automotive Services"], "price": [1500, 2500]},
+      {"title": "Vehicle wash", "description": "Exterior wash and interior vacuum for a small car.", "type": "SERVICE", "categories": ["Automotive Services"], "price": [1200, 2200]},
+      {"title": "Wiper blade pair", "description": "Standard replacement rubber wiper blades.", "type": "PRODUCT", "categories": ["Automotive Parts"], "price": [1800, 3500]},
+      {"title": "Brake inspection", "description": "Brake wear inspection and adjustment estimate.", "type": "SERVICE", "categories": ["Automotive Services"], "price": [2000, 4000]}
+    ]
+  },
+  {
+    "base": "freshspace", "name": "FreshSpace Cleaning", "description": "Scheduled home and office cleaning with local teams.",
+    "address": "15 Garden Lane", "categories": ["Home & Garden", "Repair & Maintenance"], "locations": [["Dehiwala-Mount Lavinia", "Colombo"], ["Wattala", "Gampaha"]],
+    "items": [
+      {"title": "Apartment cleaning", "description": "Two person cleaning visit for a small apartment.", "type": "SERVICE", "categories": ["Cleaning Services"], "price": [4500, 7500]},
+      {"title": "Office cleaning visit", "description": "Floors, desks and shared areas for a small office.", "type": "SERVICE", "categories": ["Cleaning Services"], "price": [5000, 9000]},
+      {"title": "Floor cleaner refill", "description": "One litre general purpose floor cleaner.", "type": "PRODUCT", "categories": ["Cleaning Products"], "price": [450, 850]},
+      {"title": "Sofa cleaning", "description": "Fabric cleaning for a three seat sofa.", "type": "SERVICE", "categories": ["Cleaning Services"], "price": [4000, 6500]}
+    ]
+  },
+  {
+    "base": "daily_basket", "name": "Daily Basket Stores", "description": "Everyday groceries and household essentials.",
+    "address": "5 Market Street", "categories": ["Retail & General Stores"], "locations": [["Galle", "Galle"], ["Badulla", "Badulla"]],
+    "items": [
+      {"title": "Red rice five kilogram bag", "description": "Locally packed red rice for family meals.", "type": "PRODUCT", "categories": ["Food & Groceries"], "price": [1100, 1600]},
+      {"title": "Ceylon tea packet", "description": "Two hundred gram loose leaf black tea.", "type": "PRODUCT", "categories": ["Food & Groceries"], "price": [450, 800]},
+      {"title": "Household cleaning bundle", "description": "Dishwashing liquid, sponge and floor cleaner.", "type": "PRODUCT", "categories": ["Cleaning Products"], "price": [1000, 1800]},
+      {"title": "Neighbourhood grocery delivery", "description": "Delivery within three kilometres of the store.", "type": "SERVICE", "categories": ["Delivery Services"], "price": [200, 400]}
+    ]
+  },
+  {
+    "base": "cinnamon_kitchen", "name": "Cinnamon Home Kitchen", "description": "Freshly prepared meals and small event catering.",
+    "address": "18 Temple Road", "categories": ["Food & Beverage"], "locations": [["Colombo", "Colombo"], ["Galle", "Galle"]],
+    "items": [
+      {"title": "Vegetable rice and curry", "description": "Rice with four seasonal vegetable curries.", "type": "PRODUCT", "categories": ["Food & Groceries"], "price": [450, 700]},
+      {"title": "Chicken lunch pack", "description": "Rice, chicken curry and three vegetable sides.", "type": "PRODUCT", "categories": ["Food & Groceries"], "price": [650, 950]},
+      {"title": "Tea time snack box", "description": "Assorted freshly prepared savoury snacks.", "type": "PRODUCT", "categories": ["Food & Groceries"], "price": [800, 1400]},
+      {"title": "Small event catering", "description": "Per guest buffet service for local gatherings.", "type": "SERVICE", "categories": ["Event Services"], "price": [1400, 2400]}
+    ]
+  },
+  {
+    "base": "green_acres", "name": "Green Acres Farm Supply", "description": "Seeds, growing supplies and practical farm support.",
+    "address": "42 Tank Road", "categories": ["Agriculture & Farming"], "locations": [["Anuradhapura", "Anuradhapura"], ["Dambulla", "Matale"]],
+    "items": [
+      {"title": "Vegetable seed starter pack", "description": "Seasonal seed packets for a home vegetable plot.", "type": "PRODUCT", "categories": ["Agricultural Products"], "price": [500, 1000]},
+      {"title": "Organic compost bag", "description": "Ten kilogram bag of mature compost.", "type": "PRODUCT", "categories": ["Agricultural Products"], "price": [700, 1200]},
+      {"title": "Irrigation inspection", "description": "Small plot irrigation inspection and adjustment.", "type": "SERVICE", "categories": ["Agricultural Services"], "price": [2500, 4500]},
+      {"title": "Seedling tray", "description": "Reusable tray for nursery seedlings.", "type": "PRODUCT", "categories": ["Agricultural Products"], "price": [350, 650]}
+    ]
+  },
+  {
+    "base": "serene_salon", "name": "Serene Salon", "description": "Everyday grooming and personal care appointments.",
+    "address": "9 Flower Road", "categories": ["Beauty & Wellness"], "locations": [["Kandy", "Kandy"], ["Ratnapura", "Ratnapura"]],
+    "items": [
+      {"title": "Haircut and styling", "description": "Consultation, haircut and basic finishing.", "type": "SERVICE", "categories": ["Beauty Services"], "price": [1200, 2500]},
+      {"title": "Hair conditioning treatment", "description": "Wash and conditioning for dry hair.", "type": "SERVICE", "categories": ["Beauty Services"], "price": [2500, 4500]},
+      {"title": "Daily care shampoo", "description": "Two hundred millilitre gentle shampoo.", "type": "PRODUCT", "categories": ["Beauty Products"], "price": [900, 1600]},
+      {"title": "Event makeup appointment", "description": "Makeup for a daytime social event.", "type": "SERVICE", "categories": ["Beauty Services"], "price": [4500, 8000]}
+    ]
+  },
+  {
+    "base": "solid_build", "name": "Solid Build Renovations", "description": "Small property renovations and building maintenance.",
+    "address": "27 Quarry Road", "categories": ["Construction"], "locations": [["Kurunegala", "Kurunegala"], ["Kalutara", "Kalutara"]],
+    "items": [
+      {"title": "Wall painting labour", "description": "Labour per room with prepared wall surfaces.", "type": "SERVICE", "categories": ["Construction Services"], "price": [8000, 14000]},
+      {"title": "Tile installation labour", "description": "Installation labour per square metre.", "type": "SERVICE", "categories": ["Construction Services"], "price": [1800, 3000]},
+      {"title": "Interior paint tin", "description": "One litre washable interior emulsion paint.", "type": "PRODUCT", "categories": ["Building Materials"], "price": [1800, 3000]},
+      {"title": "Renovation site visit", "description": "Measurements and scope discussion for a small renovation.", "type": "SERVICE", "categories": ["Construction Services"], "price": [2000, 4000]}
+    ]
+  },
+  {
+    "base": "island_threads", "name": "Island Threads Tailoring", "description": "Locally sewn clothing and everyday alterations.",
+    "address": "6 Textile Lane", "categories": ["Fashion & Apparel"], "locations": [["Jaffna", "Jaffna"], ["Batticaloa", "Batticaloa"]],
+    "items": [
+      {"title": "Cotton casual shirt", "description": "Locally stitched short sleeve cotton shirt.", "type": "PRODUCT", "categories": ["Clothing & Footwear"], "price": [2200, 3800]},
+      {"title": "School uniform set", "description": "Standard school uniform made to measurements.", "type": "PRODUCT", "categories": ["Clothing & Footwear"], "price": [2500, 4500]},
+      {"title": "Trouser alteration", "description": "Length adjustment and simple waist alteration.", "type": "SERVICE", "categories": ["Art & Crafts"], "price": [500, 1000]},
+      {"title": "Canvas tote bag", "description": "Reusable stitched cotton shopping bag.", "type": "PRODUCT", "categories": ["Accessories"], "price": [700, 1400]}
+    ]
+  },
+  {
+    "base": "timber_home", "name": "Timber Home Workshop", "description": "Practical wood furniture and home interior repairs.",
+    "address": "34 Carpenter Road", "categories": ["Furniture & Interiors"], "locations": [["Moratuwa", "Colombo"], ["Ambalangoda", "Galle"]],
+    "items": [
+      {"title": "Wooden study desk", "description": "Compact study desk with one drawer.", "type": "PRODUCT", "categories": ["Furniture"], "price": [18000, 28000]},
+      {"title": "Bookshelf", "description": "Four shelf freestanding wooden bookcase.", "type": "PRODUCT", "categories": ["Furniture"], "price": [14000, 22000]},
+      {"title": "Furniture repair visit", "description": "Assessment and minor repairs to wooden furniture.", "type": "SERVICE", "categories": ["Mechanical Services"], "price": [2500, 5000]},
+      {"title": "Wall shelf pair", "description": "Two finished wooden floating shelves.", "type": "PRODUCT", "categories": ["Home Decor"], "price": [3500, 6000]}
+    ]
+  },
+  {
+    "base": "garden_path", "name": "Garden Path Nursery", "description": "Plants and care services for small home gardens.",
+    "address": "21 Nursery Lane", "categories": ["Home & Garden"], "locations": [["Gampaha", "Gampaha"], ["Peradeniya", "Kandy"]],
+    "items": [
+      {"title": "Flowering plant pot", "description": "Seasonal flowering plant in a reusable pot.", "type": "PRODUCT", "categories": ["Agricultural Products"], "price": [650, 1300]},
+      {"title": "Herb plant collection", "description": "Three kitchen herb seedlings ready for planting.", "type": "PRODUCT", "categories": ["Agricultural Products"], "price": [900, 1600]},
+      {"title": "Home garden maintenance", "description": "Half day weeding, pruning and garden cleanup.", "type": "SERVICE", "categories": ["Gardening Services"], "price": [3500, 6000]},
+      {"title": "Balcony garden setup", "description": "Planning and installation labour for a small balcony garden.", "type": "SERVICE", "categories": ["Gardening Services"], "price": [5000, 9000]}
+    ]
+  },
+  {
+    "base": "lagoon_stay", "name": "Lagoon Guest House", "description": "Simple accommodation and local travel assistance.",
+    "address": "3 Lagoon Road", "categories": ["Hospitality", "Travel & Tourism"], "locations": [["Negombo", "Gampaha"], ["Trincomalee", "Trincomalee"]],
+    "items": [
+      {"title": "Standard double room", "description": "One night accommodation for two adults.", "type": "SERVICE", "categories": ["Rental Services"], "price": [7000, 12000]},
+      {"title": "Family room", "description": "One night accommodation for up to four guests.", "type": "SERVICE", "categories": ["Rental Services"], "price": [11000, 18000]},
+      {"title": "Breakfast basket", "description": "Prepared breakfast basket for two guests.", "type": "PRODUCT", "categories": ["Food & Groceries"], "price": [1600, 2600]},
+      {"title": "Bicycle day rental", "description": "One bicycle with helmet for local sightseeing.", "type": "SERVICE", "categories": ["Rental Services"], "price": [1200, 2000]}
+    ]
+  },
+  {
+    "base": "clear_books", "name": "Clear Books Services", "description": "Bookkeeping and administrative support for small enterprises.",
+    "address": "11 Office Lane", "categories": ["Legal & Professional"], "locations": [["Colombo", "Colombo"], ["Kegalle", "Kegalle"]],
+    "items": [
+      {"title": "Monthly bookkeeping", "description": "Record keeping for a small business with up to fifty transactions.", "type": "SERVICE", "categories": ["Legal & Financial Services"], "price": [8000, 14000]},
+      {"title": "Business budget consultation", "description": "One hour cash flow planning appointment.", "type": "SERVICE", "categories": ["Consulting Services"], "price": [3500, 6000]},
+      {"title": "Expense tracking template", "description": "Downloadable workbook for business expenses.", "type": "PRODUCT", "categories": ["Digital Products"], "price": [800, 1500]},
+      {"title": "Payroll preparation", "description": "Monthly payroll preparation for up to ten staff.", "type": "SERVICE", "categories": ["Legal & Financial Services"], "price": [5000, 9000]}
+    ]
+  },
+  {
+    "base": "frame_story", "name": "Frame Story Studio", "description": "Photography, design and media for local brands and families.",
+    "address": "17 Studio Road", "categories": ["Marketing & Media"], "locations": [["Kandy", "Kandy"], ["Galle", "Galle"]],
+    "items": [
+      {"title": "Product photography session", "description": "Edited photographs of up to ten small products.", "type": "SERVICE", "categories": ["Photography & Media"], "price": [10000, 18000]},
+      {"title": "Family portrait session", "description": "One hour studio session with five edited photographs.", "type": "SERVICE", "categories": ["Photography & Media"], "price": [8000, 14000]},
+      {"title": "Social media design pack", "description": "Five branded social media post designs.", "type": "SERVICE", "categories": ["Marketing Services"], "price": [6000, 10000]},
+      {"title": "Framed photo print", "description": "A4 photo print with a simple wooden frame.", "type": "PRODUCT", "categories": ["Home Decor"], "price": [1800, 3500]}
+    ]
+  },
+  {
+    "base": "paw_corner", "name": "Paw Corner Pet Care", "description": "Pet supplies and routine grooming appointments.",
+    "address": "7 Park Lane", "categories": ["Pets & Animals"], "locations": [["Dehiwala-Mount Lavinia", "Colombo"], ["Gampaha", "Gampaha"]],
+    "items": [
+      {"title": "Dry dog food bag", "description": "One kilogram everyday adult dog food.", "type": "PRODUCT", "categories": ["Pet Products & Services"], "price": [1800, 3000]},
+      {"title": "Pet grooming appointment", "description": "Wash, brushing and nail trim for a small dog.", "type": "SERVICE", "categories": ["Pet Products & Services"], "price": [2500, 4500]},
+      {"title": "Adjustable pet collar", "description": "Washable collar for a medium size pet.", "type": "PRODUCT", "categories": ["Pet Products & Services"], "price": [700, 1300]},
+      {"title": "Cat play set", "description": "Three lightweight toys for indoor play.", "type": "PRODUCT", "categories": ["Pet Products & Services"], "price": [900, 1600]}
+    ]
+  },
+  {
+    "base": "ink_leaf", "name": "Ink and Leaf Print Shop", "description": "Everyday printing and stationery for students and businesses.",
+    "address": "10 College Road", "categories": ["Printing & Stationery"], "locations": [["Jaffna", "Jaffna"], ["Matara", "Matara"]],
+    "items": [
+      {"title": "Business card printing", "description": "One hundred standard colour business cards.", "type": "SERVICE", "categories": ["Printing Services"], "price": [2000, 3500]},
+      {"title": "Document binding", "description": "Spiral binding for one A4 document.", "type": "SERVICE", "categories": ["Printing Services"], "price": [250, 500]},
+      {"title": "Notebook bundle", "description": "Three ruled A5 notebooks.", "type": "PRODUCT", "categories": ["Books & Stationery"], "price": [600, 1000]},
+      {"title": "Colour poster print", "description": "One A3 colour poster on heavy paper.", "type": "SERVICE", "categories": ["Printing Services"], "price": [450, 900]}
+    ]
+  },
+  {
+    "base": "active_steps", "name": "Active Steps Fitness", "description": "Small group exercise and practical fitness equipment.",
+    "address": "22 Sports Road", "categories": ["Sports & Fitness"], "locations": [["Colombo", "Colombo"], ["Kurunegala", "Kurunegala"]],
+    "items": [
+      {"title": "Monthly fitness membership", "description": "Access to scheduled small group exercise sessions.", "type": "SERVICE", "categories": ["Education & Training"], "price": [4500, 7500]},
+      {"title": "Personal training session", "description": "One hour supervised exercise appointment.", "type": "SERVICE", "categories": ["Education & Training"], "price": [2500, 4500]},
+      {"title": "Exercise mat", "description": "Non-slip mat for stretching and floor exercises.", "type": "PRODUCT", "categories": ["Accessories"], "price": [2200, 3800]},
+      {"title": "Resistance band set", "description": "Three bands with different resistance levels.", "type": "PRODUCT", "categories": ["Accessories"], "price": [1500, 2800]}
+    ]
+  },
+  {
+    "base": "swift_parcel", "name": "Swift Parcel Services", "description": "Local deliveries and small household moves.",
+    "address": "29 Depot Road", "categories": ["Transport & Logistics"], "locations": [["Colombo", "Colombo"], ["Batticaloa", "Batticaloa"]],
+    "items": [
+      {"title": "Local parcel delivery", "description": "Delivery of a small parcel within city limits.", "type": "SERVICE", "categories": ["Delivery Services"], "price": [350, 700]},
+      {"title": "Small van hire", "description": "Two hour van and driver booking within the city.", "type": "SERVICE", "categories": ["Rental Services"], "price": [4500, 7500]},
+      {"title": "Packing box bundle", "description": "Five medium corrugated packing boxes.", "type": "PRODUCT", "categories": ["Accessories"], "price": [1200, 2200]},
+      {"title": "Shop delivery round", "description": "Scheduled delivery round for up to five local addresses.", "type": "SERVICE", "categories": ["Delivery Services"], "price": [1800, 3200]}
+    ]
+  }
+]

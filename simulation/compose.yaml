@@ -1,0 +1,78 @@
+name: service-advertiser-simulation
+
+x-simulator: &simulator
+  image: locustio/locust:2.43.3
+  working_dir: /mnt/locust
+  volumes:
+    - ./:/mnt/locust
+  networks: [simulation]
+  depends_on:
+    api:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: service_advertiser_simulation
+      POSTGRES_USER: simulation
+      POSTGRES_PASSWORD: simulation_only_password
+    volumes:
+      - simulation_data:/var/lib/postgresql
+    networks: [simulation]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U simulation -d service_advertiser_simulation']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build:
+      context: ..
+      dockerfile: simulation/Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/service_advertiser_simulation
+      SPRING_DATASOURCE_USERNAME: simulation
+      SPRING_DATASOURCE_PASSWORD: simulation_only_password
+      # Public, synthetic simulation-only key. Never use this outside this stack.
+      JWT_SECRET_BASE64: c2ltdWxhdGlvbl9vbmx5X3NpZ25pbmdfa2V5XzMyX2J5dGVz
+      JWT_ISSUER: service-advertiser-simulation
+      JWT_AUDIENCE: service-advertiser-simulation-api
+      JWT_ACCESS_LIFETIME: ${SIM_ACCESS_LIFETIME:-15m}
+      JWT_REFRESH_LIFETIME: ${SIM_REFRESH_LIFETIME:-7d}
+      ITEMS_MAX_PER_BUSINESS: 10
+      BUSINESS_MAX_CATEGORIES: 3
+      ITEM_MAX_CATEGORIES: 2
+    ports: ['127.0.0.1:8081:8080']
+    networks: [simulation, access]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, http://localhost:8080/api/v1/categories/business]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+      start_period: 20s
+
+  bootstrap:
+    <<: *simulator
+    profiles: [tools]
+    entrypoint: [python, bootstrap.py]
+
+  locust:
+    <<: *simulator
+    profiles: [activity]
+    ports: ['127.0.0.1:8089:8089']
+    networks: [simulation, access]
+    entrypoint: [/bin/sh, -c, 'mkdir -p results && exec locust "$$@"', '--']
+    command: [-f, locustfile.py, --host, 'http://api:8080', --csv, results/activity]
+
+networks:
+  simulation:
+    internal: true
+  # Docker does not publish ports for containers on internal-only networks.
+  access: {}
+
+volumes:
+  simulation_data:

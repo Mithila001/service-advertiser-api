@@ -1,5 +1,11 @@
 # Service Advertiser API
 
+## API user simulation
+
+The [Locust simulation module](simulation/README.md) provides an isolated Docker
+environment, realistic API-driven population, and continuous activity for up to
+100 virtual users.
+
 ## Interactive API documentation
 
 Run the application, then open [Swagger UI](http://localhost:8080/swagger-ui/index.html).
