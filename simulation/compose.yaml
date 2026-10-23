@@ -35,11 +35,13 @@ services:
       retries: 30
 
   api:
+    stop_grace_period: 45s
     logging: *logging
     build:
       context: ..
       dockerfile: simulation/Dockerfile
     environment:
+      RATE_LIMIT_ENABLED: 'false'
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/service_advertiser_simulation
       SPRING_DATASOURCE_USERNAME: simulation
       SPRING_DATASOURCE_PASSWORD: simulation_only_password

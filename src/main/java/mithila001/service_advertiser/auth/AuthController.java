@@ -28,14 +28,19 @@ import mithila001.service_advertiser.auth.dto.TokenResponse;
     @ApiResponse(responseCode = "400", ref = "#/components/responses/Error400"),
     @ApiResponse(responseCode = "500", ref = "#/components/responses/Error500")
 })
+@org.springframework.context.annotation.Import(mithila001.service_advertiser.config.RateLimiter.class)
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+    private final mithila001.service_advertiser.config.RateLimiter limiter;
+
     private final RegistrationService registrationService;
     private final AuthenticationService authenticationService;
 
-    public AuthController(RegistrationService registrationService, AuthenticationService authenticationService) {
+    public AuthController(RegistrationService registrationService, AuthenticationService authenticationService,
+            mithila001.service_advertiser.config.RateLimiter limiter) {
+        this.limiter = limiter;
         this.registrationService = registrationService;
         this.authenticationService = authenticationService;
     }
@@ -57,7 +62,8 @@ public class AuthController {
         @ApiResponse(responseCode = "401", ref = "#/components/responses/Error401")
     })
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, jakarta.servlet.http.HttpServletRequest servletRequest) {
+        limiter.login(request.email(), servletRequest.getRemoteAddr());
         var tokens = authenticationService.login(request);
         log.atInfo().addKeyValue("event", "login_success").log("Authentication succeeded");
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(tokens);

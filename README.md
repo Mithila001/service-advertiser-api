@@ -352,3 +352,38 @@ are omitted when a catalog location filter is used.
 Local development writes readable console output and rotated JSON files under
 `logs/`. See [logging conventions](docs/engineering/logging.md) and
 [optional Grafana/Loki operations](observability/README.md).
+
+## API protection and reliability
+
+Rate limiting is enabled by default for POST login, registration, and refresh.
+Login permits 120 requests per IP per minute and 5 per normalized email/IP per
+minute. Registration permits 20 per IP per ten minutes; refresh permits 120 per
+IP per minute. Buckets start full and refill continuously. HTTP 429 includes
+Retry-After in seconds; wait before trying again. A rejected refresh has not
+consumed the refresh token. Never automatically retry an uncertain refresh outcome.
+
+Limits use the direct remote address and ignore forwarded headers. Configure a
+trusted proxy separately before deploying behind one. Shared-IP users have separate
+account budgets but share the IP budget. Account/IP limits do not stop distributed
+guessing, and an attacker sharing an IP can affect users there. State is local to
+one JVM and resets on restart. At 10,000 live bucket entries, new identities receive
+503 with Retry-After: 60; active entries are not evicted. Idle entries expire after
+at least 15 minutes or a full refill period, whichever is longer.
+
+JSON bodies under /api/v1 are limited to 65,536 bytes, including chunked bodies and
+trailing content. Oversized bodies return 413 before mutations. Accepted bodies
+are buffered within that bound. Business/item descriptions accept 10,000 characters;
+registration passwords retain the minimum length and accept at most 72 UTF-8 bytes.
+Field violations return 400. Existing login password matching remains unchanged.
+
+Hikari waits up to 3 seconds for a connection and validates within 1 second.
+Runtime PostgreSQL statements time out after 5 seconds. Flyway uses a separate
+connection without the runtime initialization SQL. Recognized database timeouts
+return a generic 503; writes are not retried. These are not universal HTTP deadlines.
+Graceful shutdown allows requests 30 seconds per shutdown phase; simulation Docker
+allows 45 seconds before force termination.
+
+See .env.example for RATE_LIMIT_* capacity/period settings, RATE_LIMIT_ENABLED,
+JSON_MAX_REQUEST_SIZE, DB_CONNECTION_TIMEOUT_MS, DB_VALIDATION_TIMEOUT_MS,
+DB_STATEMENT_TIMEOUT_MS, and SHUTDOWN_GRACE_PERIOD. Keep validation timeout below
+connection timeout. Disabling rate limits does not disable body or database limits.

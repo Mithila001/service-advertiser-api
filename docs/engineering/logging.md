@@ -98,3 +98,5 @@ datasets before changing logging to asynchronous delivery. Record request rate,
 latency percentiles, errors, output bytes and disk growth. Keep baseline and enabled
 runs separate from developer data; do not reset an existing simulation to obtain
 benchmark numbers. Metrics monitoring and distributed tracing are separate work.
+
+Protection emits rate_limit_rejected, rate_limit_capacity_rejected, request_size_rejected, and database_timeout events. Correlate these with request_id and HTTP completion status. Policy names and timeout reasons are fixed; identities and request bodies are never logged.

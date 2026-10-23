@@ -12,7 +12,7 @@ public record RegisterRequest(
         @Email(message = "Must be a valid email address")
         @Size(max = 255, message = "Must be at most 255 characters") String email,
         @Schema(format = "password", accessMode = Schema.AccessMode.WRITE_ONLY)
-        @NotBlank(message = "Password is required") @Size(min = 8, message = "Must be at least 8 characters") String password) {
+        @NotBlank(message = "Password is required") @Size(min = 8, message = "Must be at least 8 characters") @mithila001.service_advertiser.auth.BcryptPasswordLength String password) {
     @Override
     public String toString() {
         return "RegisterRequest[REDACTED]";

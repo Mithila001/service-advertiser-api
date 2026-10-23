@@ -3,8 +3,14 @@ spring:
     import: "optional:file:./.env[.properties]"
   application:
     name: service-advertiser
+  lifecycle:
+    timeout-per-shutdown-phase: ${SHUTDOWN_GRACE_PERIOD:30s}
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/service_advertiser}
+    hikari:
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
+      validation-timeout: ${DB_VALIDATION_TIMEOUT_MS:1000}
+      connection-init-sql: SET statement_timeout = ${DB_STATEMENT_TIMEOUT_MS:5000}
     username: ${SPRING_DATASOURCE_USERNAME:dev_user123}
     password: ${SPRING_DATASOURCE_PASSWORD:dev_user123}
   jpa:
@@ -12,8 +18,31 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+
+server:
+  shutdown: graceful
+  forward-headers-strategy: none
 
 app:
+  protection:
+    max-json-body-size: ${JSON_MAX_REQUEST_SIZE:64KB}
+    rate-limit:
+      enabled: ${RATE_LIMIT_ENABLED:true}
+      login-ip:
+        capacity: ${RATE_LIMIT_LOGIN_IP_CAPACITY:120}
+        period: ${RATE_LIMIT_LOGIN_IP_PERIOD:1m}
+      login-account-ip:
+        capacity: ${RATE_LIMIT_LOGIN_ACCOUNT_IP_CAPACITY:5}
+        period: ${RATE_LIMIT_LOGIN_ACCOUNT_IP_PERIOD:1m}
+      register-ip:
+        capacity: ${RATE_LIMIT_REGISTER_IP_CAPACITY:20}
+        period: ${RATE_LIMIT_REGISTER_IP_PERIOD:10m}
+      refresh-ip:
+        capacity: ${RATE_LIMIT_REFRESH_IP_CAPACITY:120}
+        period: ${RATE_LIMIT_REFRESH_IP_PERIOD:1m}
   pagination:
     default-size: ${PAGINATION_DEFAULT_SIZE:10}
     max-size: ${PAGINATION_MAX_SIZE:100}

@@ -16,7 +16,7 @@ import java.util.List;
         example = "{\"name\":\"Colombo Services\",\"description\":\"Local services\",\"phone\":\"+94112345678\",\"cityId\":1,\"categoryIds\":[]}")
 public record BusinessInformationRequest(
         @NotBlank @Size(max = 150) String name,
-        String description,
+        @Size(max = 10000) String description,
         @Size(max = 20) String phone,
         @Size(max = 255) @Email String email,
         @Size(max = 500) String websiteUrl,

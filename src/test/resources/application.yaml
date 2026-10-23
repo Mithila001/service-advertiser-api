@@ -1,5 +1,8 @@
 # Test-only key. Never use this configuration outside tests.
 app:
+  protection:
+    rate-limit:
+      enabled: false
   auth:
     secret-base64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     issuer: service-advertiser

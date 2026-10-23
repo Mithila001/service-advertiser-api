@@ -204,3 +204,5 @@ has no account-deletion endpoint.
 Java changes require rebuilding the API image with `--build`; Python and data
 changes are bind-mounted and need a simulator restart. Limits, task weights and
 wait times are documented constants, not a separate configuration system.
+
+The isolated API explicitly disables rate limiting with RATE_LIMIT_ENABLED=false. Body and database limits remain active. Container termination allows 45 seconds. Verify throttling separately with protection enabled; keep Locust focused on performance.

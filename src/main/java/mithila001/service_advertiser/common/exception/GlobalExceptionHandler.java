@@ -76,8 +76,23 @@ public class GlobalExceptionHandler {
         return response(status, status.getReasonPhrase(), exception.getReason(), Map.of());
     }
 
+    @ExceptionHandler(mithila001.service_advertiser.config.RateLimiter.Rejected.class)
+    public ResponseEntity<ErrorResponse> handleRate(mithila001.service_advertiser.config.RateLimiter.Rejected e) {
+        log.atWarn().addKeyValue("event", e.status == 429 ? "rate_limit_rejected" : "rate_limit_capacity_rejected").addKeyValue("policy", e.policy).addKeyValue("reason", e.status == 429 ? "budget_exhausted" : "storage_full").log("Request admission rejected");
+        return ResponseEntity.status(e.status).header("Retry-After", Long.toString(e.retry)).body(new ErrorResponse(e.status,
+                e.status == 429 ? "Too Many Requests" : "Service Unavailable", e.status == 429 ? "Too many requests. Please try again later." : "Service is temporarily unavailable", Map.of()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception exception) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            String reason = cause instanceof java.sql.SQLTransientConnectionException ? "acquisition"
+                    : cause instanceof org.springframework.dao.QueryTimeoutException || cause instanceof org.hibernate.QueryTimeoutException ? "statement" : null;
+            if (reason != null) {
+                log.atWarn().addKeyValue("event", "database_timeout").addKeyValue("reason", reason).log("Database operation timed out");
+                return response(HttpStatus.SERVICE_UNAVAILABLE, "Service Unavailable", "Service is temporarily unavailable", Map.of());
+            }
+        }
         for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
             if (cause instanceof ConstraintViolationException violation
                     && "business_unique_name_key".equals(violation.getConstraintName())) {

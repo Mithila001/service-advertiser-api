@@ -14,6 +14,7 @@ public class UpdateItemRequest {
     @Size(max = 150) @Pattern(regexp = "(?s).*\\S.*")
     private String title;
     @Schema(types = {"string", "null"}, description = "Omit to preserve; send null to clear.")
+    @Size(max = 10000)
     private String description;
     private ItemType type;
     @Schema(types = {"number", "null"}, description = "Price in LKR. Omit to preserve; send null to clear; zero means free.")
