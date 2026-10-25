@@ -39,3 +39,15 @@ Prefer Spring Data JPA for database access. Use `JdbcTemplate` when JPA is not s
 - The simulator communicates with the application through HTTP APIs and exercises registration, discovery, authentication, and business/item lifecycle flows.
 - Each authenticated virtual user manages its own JWT access token and rotating opaque refresh token; refresh timing uses the expiry duration returned by the API.
 - See `simulation/README.md` for setup, checks, reports, and reset instructions.
+
+### Logging and Observability
+
+- Structured request logs include request IDs for tracing requests and are written to rotating JSON log files.
+- An optional Grafana, Loki, and Alloy stack collects and displays application logs.
+- See `docs/engineering/logging.md` and `observability/README.md` for configuration and setup.
+
+### API Protection
+
+- Configurable rate limits protect login, registration, and token refresh endpoints.
+- JSON request bodies are limited in size, and passwords are validated against Bcrypt's length limit.
+- Rate limit and oversized request errors are documented in the OpenAPI specification.

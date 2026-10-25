@@ -1,15 +1,18 @@
-CI CD
-Deployment
+## Completed
 Observability
 Logging
 Load Testing
 Security Testing
 Database Recovery
+Rate Limit, Time Out, recovery
 
+## Not Completed
+CI CD
+Deployment
 Load Balancing 
 Performance Optimization
-Rate Limit, Time Out, recovery
 Alerting
 Release Management
 Infrastructure Automation
+
 
