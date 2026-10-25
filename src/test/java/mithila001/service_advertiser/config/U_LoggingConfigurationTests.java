@@ -41,8 +41,8 @@ class U_LoggingConfigurationTests {
                 } else content = Files.readString(log);
                 for (String line : content.lines().toList()) {
                     var json = mapper.readTree(line);
-                    assertEquals("configuration-check", json.get("request_id").asText());
-                    assertEquals("GET", json.get("method").asText());
+                    assertEquals("configuration-check", json.get("request_id").stringValue());
+                    assertEquals("GET", json.get("method").stringValue());
                     assertNotNull(json.get("@timestamp"));
                     count++;
                 }
@@ -58,7 +58,7 @@ class U_LoggingConfigurationTests {
         var jsonLines = console.lines().filter(line -> line.startsWith("{" )).toList();
         assertFalse(jsonLines.isEmpty());
         for (String line : jsonLines) {
-            assertEquals("configuration-check", mapper.readTree(line).get("request_id").asText());
+            assertEquals("configuration-check", mapper.readTree(line).get("request_id").stringValue());
         }
     }
 

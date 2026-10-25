@@ -23,14 +23,14 @@ public class OpenApiConfig {
                 .type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")
                 .description("Paste your accessToken without the Bearer prefix."));
         for (HttpStatus status : new HttpStatus[] { HttpStatus.BAD_REQUEST, HttpStatus.UNAUTHORIZED,
-                HttpStatus.FORBIDDEN, HttpStatus.NOT_FOUND, HttpStatus.CONFLICT, HttpStatus.PAYLOAD_TOO_LARGE, HttpStatus.TOO_MANY_REQUESTS, HttpStatus.SERVICE_UNAVAILABLE, HttpStatus.INTERNAL_SERVER_ERROR }) {
+                HttpStatus.FORBIDDEN, HttpStatus.NOT_FOUND, HttpStatus.CONFLICT, HttpStatus.CONTENT_TOO_LARGE, HttpStatus.TOO_MANY_REQUESTS, HttpStatus.SERVICE_UNAVAILABLE, HttpStatus.INTERNAL_SERVER_ERROR }) {
             components.addResponses("Error" + status.value(), new ApiResponse().description(switch (status) {
                 case BAD_REQUEST -> "Invalid request data or catalog IDs.";
                 case UNAUTHORIZED -> "Missing or invalid access token, credentials, or refresh token.";
                 case FORBIDDEN -> "Your account, role, or business does not permit this action.";
                 case NOT_FOUND -> "Resource not found or not accessible to you.";
                 case CONFLICT -> "Duplicate registration, item limit reached, or incompatible business state.";
-                case PAYLOAD_TOO_LARGE -> "JSON body exceeds the configured byte limit.";
+                case CONTENT_TOO_LARGE -> "JSON body exceeds the configured byte limit.";
                 case TOO_MANY_REQUESTS -> "Request rate exceeded. Retry-After gives the wait in seconds.";
                 case SERVICE_UNAVAILABLE -> "Service temporarily unavailable; do not automatically retry writes.";
                 default -> "Unexpected server error.";
