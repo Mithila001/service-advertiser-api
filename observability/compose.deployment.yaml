@@ -1,0 +1,36 @@
+services:
+  loki:
+    mem_limit: 512m
+    environment:
+      LOKI_RETENTION_PERIOD: 72h
+  grafana:
+    mem_limit: 256m
+    group_add: ['472']
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_password
+    secrets: [grafana_password]
+    ports: ['127.0.0.1:3002:3000']
+  prometheus:
+    mem_limit: 384m
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=3d
+      - --storage.tsdb.retention.size=512MB
+    volumes:
+      - ./prometheus.deployment.yaml:/etc/prometheus/prometheus.yaml:ro
+  alloy:
+    mem_limit: 128m
+    # Files are owned by the API's group, including rotated archives.
+    user: alloy
+    group_add: ['10001']
+    volumes:
+      - ./alloy-deployment.alloy:/etc/alloy/source.alloy:ro
+      - application_logs:/var/log/service-advertiser:ro
+
+volumes:
+  application_logs:
+
+secrets:
+  grafana_password:
+    file: ${DEPLOYMENT_SECRETS_DIR:?Set DEPLOYMENT_SECRETS_DIR}/grafana_password

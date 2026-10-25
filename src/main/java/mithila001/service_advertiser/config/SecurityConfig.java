@@ -2,6 +2,7 @@ package mithila001.service_advertiser.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,7 +21,8 @@ import java.util.Map;
 @EnableMethodSecurity
 public class SecurityConfig {
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper mapper) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper mapper, Environment environment) throws Exception {
+        int managementPort = environment.getProperty("management.server.port", Integer.class, -1);
         AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
             response.setStatus(401);
             response.setHeader("WWW-Authenticate", "Bearer");
@@ -43,6 +45,12 @@ public class SecurityConfig {
                 .requestCache(cache -> cache.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(request -> request.getLocalPort() == environment.getProperty(
+                                    "local.management.port", Integer.class, managementPort) && managementPort >= 0
+                                && "GET".equals(request.getMethod())
+                                && (request.getRequestURI().equals("/actuator/prometheus")
+                                    || request.getRequestURI().startsWith("/actuator/health/"))).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/livez", "/readyz").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/v3/api-docs.yaml", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",

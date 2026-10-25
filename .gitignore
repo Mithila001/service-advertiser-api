@@ -35,3 +35,14 @@ build/
 
 .env
 logs/
+
+# Private environment/configuration and operational artifacts
+.env.*
+!.env.example
+**/secrets/
+**/backups/
+*.dump
+*.dump.tmp
+simulation/runtime/
+simulation/results/
+**/__pycache__/

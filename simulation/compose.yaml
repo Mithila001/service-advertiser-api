@@ -1,5 +1,10 @@
 name: service-advertiser-simulation
 
+include:
+  - path:
+      - ../observability/compose.yaml
+      - ../observability/compose.simulation.yaml
+
 x-logging: &logging
   driver: json-file
   options:
@@ -39,8 +44,10 @@ services:
     logging: *logging
     build:
       context: ..
-      dockerfile: simulation/Dockerfile
+      dockerfile: Dockerfile
     environment:
+      SPRING_PROFILES_ACTIVE: simulation,monitoring
+      MANAGEMENT_BIND_ADDRESS: 0.0.0.0
       RATE_LIMIT_ENABLED: 'false'
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/service_advertiser_simulation
       SPRING_DATASOURCE_USERNAME: simulation
@@ -58,12 +65,12 @@ services:
       BUSINESS_MAX_CATEGORIES: 3
       ITEM_MAX_CATEGORIES: 2
     ports: ['127.0.0.1:8081:8080']
-    networks: [simulation, access]
+    networks: [simulation, access, observability]
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: [CMD, curl, --fail, --silent, http://localhost:8080/actuator/health]
+      test: [CMD, curl, --fail, --silent, http://localhost:8080/readyz]
       interval: 5s
       timeout: 3s
       retries: 40

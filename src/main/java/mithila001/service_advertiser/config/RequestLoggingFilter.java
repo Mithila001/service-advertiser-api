@@ -45,7 +45,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         } finally {
             try {
                 int status = failed ? 500 : response.getStatus();
-                if (!("GET".equals(request.getMethod()) && "/actuator/health".equals(request.getRequestURI())
+                String path = request.getRequestURI();
+                boolean operational = "/actuator/health".equals(path) || path.startsWith("/actuator/health/")
+                        || "/actuator/prometheus".equals(path) || "/livez".equals(path) || "/readyz".equals(path);
+                if (!("GET".equals(request.getMethod()) && operational
                         && status >= 200 && status < 300)) {
                     Object route = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
                     Level level = status >= 500 ? Level.ERROR

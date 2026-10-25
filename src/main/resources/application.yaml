@@ -1,18 +1,15 @@
 spring:
-  config:
-    import: "optional:file:./.env[.properties]"
+  profiles:
+    default: development
   application:
     name: service-advertiser
   lifecycle:
     timeout-per-shutdown-phase: ${SHUTDOWN_GRACE_PERIOD:30s}
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/service_advertiser}
     hikari:
       connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
       validation-timeout: ${DB_VALIDATION_TIMEOUT_MS:1000}
       connection-init-sql: SET statement_timeout = ${DB_STATEMENT_TIMEOUT_MS:5000}
-    username: ${SPRING_DATASOURCE_USERNAME:dev_user123}
-    password: ${SPRING_DATASOURCE_PASSWORD:dev_user123}
   jpa:
     hibernate:
       ddl-auto: validate

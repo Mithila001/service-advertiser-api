@@ -28,7 +28,7 @@ than exposing arbitrary paths. Summaries have no stack traces. The existing
 exception advice owns handled unexpected-error traces; the filter owns failures
 that escape the chain. Error redispatch is skipped. Current endpoints are
 synchronous; add async completion/context handling before introducing async APIs.
-Successful `GET /actuator/health` requests are quiet. Failed checks remain visible;
+Successful health/probe and Prometheus scrape requests are quiet where this filter applies. Failed checks remain visible;
 the endpoint is public and returns status only.
 
 ## Sensitive data and diagnostics
@@ -54,7 +54,8 @@ diagnostic files. Application log retention is not a substitute for access contr
 | Mode | Console | Application files | Central collection |
 | --- | --- | --- | --- |
 | Local | Readable, with request ID and event fields | JSON Lines, enabled by default | Optional Alloy file reader |
-| Simulation | Logstash JSON | Disabled by default | Optional Alloy Docker reader |
+| Simulation | Logstash JSON | Disabled by default | Alloy Docker reader |
+| Deployment | Logstash JSON | Dedicated rotated volume | Alloy file reader, no Docker socket |
 | Automated tests | Console | Disabled; file checks use temporary directories | None |
 
 Local output defaults to `logs/service-advertiser.json`, relative to the working
@@ -76,7 +77,7 @@ seven days using its compactor and persistent filesystem storage. Deletion is
 asynchronous (including a two-hour delete delay); age retention is not a capacity
 quota. Check Docker's allocated disk usage and available host storage during load.
 
-Alloy positions persist across ordinary restarts and source switches. Collection is
+Alloy positions persist across ordinary restarts and ordinary restarts. Collection is
 best effort, not an exactly-once durable audit transport. Starting late can recover
 some retained data, but offline rotation, file truncation, container removal, old
 timestamps, checkpoint timing and outages can cause gaps or replay. Start Alloy
@@ -97,6 +98,6 @@ switching. Compare identical Locust user counts, spawn rates, durations and seed
 datasets before changing logging to asynchronous delivery. Record request rate,
 latency percentiles, errors, output bytes and disk growth. Keep baseline and enabled
 runs separate from developer data; do not reset an existing simulation to obtain
-benchmark numbers. Metrics monitoring and distributed tracing are separate work.
+benchmark numbers. Prometheus metrics and dashboards are documented in the observability guide; distributed tracing remains outside scope.
 
 Protection emits rate_limit_rejected, rate_limit_capacity_rejected, request_size_rejected, and database_timeout events. Correlate these with request_id and HTTP completion status. Policy names and timeout reasons are fixed; identities and request bodies are never logged.

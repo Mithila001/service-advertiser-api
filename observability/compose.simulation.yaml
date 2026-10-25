@@ -1,7 +1,17 @@
 services:
+  grafana:
+    environment:
+      # Public synthetic credential, confined to loopback and this simulation.
+      GF_SECURITY_ADMIN_PASSWORD: simulation_only_grafana
+    ports: ['127.0.0.1:3001:3000']
+  prometheus:
+    volumes:
+      - ./prometheus.simulation.yaml:/etc/prometheus/prometheus.yaml:ro
   alloy:
     # Read-only mounting does NOT restrict Docker API operations. Trusted local use only.
     user: '0:0'
+    environment:
+      ALLOY_COMPOSE_PROJECT: ${COMPOSE_PROJECT_NAME:-service-advertiser-simulation}
     volumes:
       - ./alloy-simulation.alloy:/etc/alloy/source.alloy:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro

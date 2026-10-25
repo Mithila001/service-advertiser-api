@@ -31,7 +31,7 @@ separate from your local development database.
 | Path | Responsibility | Start here when… |
 | --- | --- | --- |
 | `simulation/compose.yaml` | Isolated API, database, bootstrap and Locust services | You need to understand containers, ports or persistence |
-| `simulation/Dockerfile` | Builds the Java API image | A Java/API change needs to appear in the simulation container |
+| `Dockerfile` | Builds the Java API image | A Java/API change needs to appear in the simulation container |
 | `simulation/common.py` | HTTP transport, response checks, login/refresh, catalog loading, manifest, locks, account leases and API-backed mutations | Shared simulator behavior or state handling is wrong |
 | `simulation/bootstrap.py` | Creates the initial synthetic accounts, businesses and items | Initial seed behavior needs to change |
 | `simulation/locustfile.py` | Virtual user lifecycle, weighted reads/writes and request labels | Continuous workload behavior needs to change |

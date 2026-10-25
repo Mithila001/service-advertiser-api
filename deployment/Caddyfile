@@ -1,0 +1,13 @@
+{$SITE_ADDRESS} {
+    @management path /actuator /actuator/*
+    respond @management 404
+
+    reverse_proxy api:8080 {
+        # Establish one forwarding authority: the socket peer, never caller headers.
+        header_up -Forwarded
+        header_up -X-Real-IP
+        header_up X-Forwarded-For {http.request.remote.host}
+        header_up X-Forwarded-Proto {http.request.scheme}
+        header_up X-Forwarded-Host {http.request.host}
+    }
+}

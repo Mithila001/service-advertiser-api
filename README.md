@@ -1,5 +1,16 @@
 # Service Advertiser API
 
+## Docker environments
+
+Development runs Spring Boot locally with Docker PostgreSQL and optional monitoring.
+Simulation runs the API, database, monitoring and optional Locust independently.
+Deployment targets a single Linux VM with Caddy HTTPS and file-based secrets.
+
+See [environment operations and command matrix](infrastructure/README.md),
+[monitoring](observability/README.md), and the [deployment runbook](deployment/README.md).
+Java 21 and Maven are needed for host development; Docker Linux containers and
+Compose 2.24.4+ are needed for the full infrastructure.
+
 ## API user simulation
 
 The [Locust simulation module](simulation/README.md) provides an isolated Docker
@@ -31,7 +42,7 @@ shared API information, bearer authentication, and error responses live in `Open
 ## Authentication configuration
 
 Requires Java 21, Maven, and PostgreSQL. Flyway applies migrations on startup.
-The application automatically loads `.env` from its working directory using
+The default `development` profile automatically loads `.env` from its working directory using
 Spring Boot's built-in properties importer. For local development, use the project
 root as the working directory, including in your IDE.
 
@@ -103,6 +114,9 @@ Login returns `200` with `Cache-Control: no-store`:
 
 Send `Authorization: Bearer <accessToken>` on protected API requests. The JWT
 contains the user ID in `sub`, plus `role`, `iss`, `aud`, `iat`, and `exp`.
+Validation tolerates an `iat` up to 60 seconds ahead of the server clock so a small
+backward clock correction does not reject a fresh token. Expiry and `nbf` remain
+strict; this allowance does not change the expiry timestamp. Keep host clocks synchronized.
 Spring Security exposes the JWT as the principal and the role as `ROLE_CUSTOMER`,
 `ROLE_PROVIDER`, or `ROLE_ADMIN`. No database lookup occurs during bearer validation.
 

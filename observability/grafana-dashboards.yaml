@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: service-advertiser
+    orgId: 1
+    folder: Service Advertiser
+    type: file
+    disableDeletion: false
+    editable: false
+    options:
+      path: /var/lib/grafana/dashboards

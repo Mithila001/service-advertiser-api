@@ -1,0 +1,4 @@
+app:
+  protection:
+    rate-limit:
+      enabled: false

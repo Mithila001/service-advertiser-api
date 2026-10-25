@@ -21,6 +21,34 @@ class U_AuthConfigurationTests {
     private final JwtDecoder decoder = config.jwtDecoder(properties, Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test
+    void freshTokensValidateAtEveryMillisecondWithinASecond() {
+        for (int millis = 0; millis < 1000; millis++) {
+            Instant instant = NOW.plusMillis(millis).plusNanos(999_999);
+            JwtClaimsSet claims = baseClaims().issuedAt(instant).expiresAt(instant.plusSeconds(900)).build();
+            JwtDecoder current = config.jwtDecoder(properties, Clock.fixed(instant, ZoneOffset.UTC));
+            String token = encode(claims);
+            assertDoesNotThrow(() -> current.decode(token), "Issued at " + instant);
+        }
+    }
+
+    @Test
+    void freshTokenSurvivesTheObservedBackwardClockCorrection() {
+        Instant issued = Instant.parse("2026-10-25T18:34:40.508Z");
+        String token = encode(baseClaims().issuedAt(issued).expiresAt(issued.plusSeconds(900)).build());
+        JwtDecoder corrected = config.jwtDecoder(properties,
+                Clock.fixed(Instant.parse("2026-10-25T18:34:39.776Z"), ZoneOffset.UTC));
+        assertDoesNotThrow(() -> corrected.decode(token));
+    }
+
+    @Test
+    void issuanceClockToleranceIsBoundedAndDoesNotExtendExpiryOrNotBefore() {
+        assertDoesNotThrow(() -> decoder.decode(token(Map.of("iat", NOW.plusSeconds(60)))));
+        assertThrows(JwtException.class, () -> decoder.decode(token(Map.of("iat", NOW.plusSeconds(61)))));
+        assertThrows(JwtException.class, () -> decoder.decode(token(Map.of("exp", NOW))));
+        assertThrows(JwtException.class, () -> decoder.decode(token(Map.of("nbf", NOW.plusSeconds(1)))));
+    }
+
+    @Test
     void signedTokenHasIdentityAndRejectsTamperingAndWrongKey() {
         String token = token(Map.of());
         assertEquals("7", decoder.decode(token).getSubject());
@@ -40,7 +68,7 @@ class U_AuthConfigurationTests {
                 Map.of("exp", NOW.minusSeconds(1)), Map.of("exp", NOW),
                 Map.of("iss", "wrong"), Map.of("aud", List.of("wrong")),
                 Map.of("sub", "not-a-number"), Map.of("sub", "0"),
-                Map.of("role", "SUPERUSER"), Map.of("iat", NOW.plusSeconds(1)))) {
+                Map.of("role", "SUPERUSER"), Map.of("iat", NOW.plusSeconds(61)))) {
             assertThrows(JwtException.class, () -> decoder.decode(token(change)), change.keySet().toString());
         }
         for (String missing : List.of("sub", "role", "exp", "iat", "aud", "iss")) {

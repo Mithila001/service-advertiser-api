@@ -21,11 +21,14 @@ import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import mithila001.service_advertiser.user.UserRole;
+import org.slf4j.LoggerFactory;
 
 @Configuration
 @EnableScheduling
 @EnableConfigurationProperties(AuthProperties.class)
 public class AuthConfiguration {
+    private static final Duration ISSUED_AT_CLOCK_SKEW = Duration.ofSeconds(60);
+
     @Bean
     Clock authClock() {
         return Clock.systemUTC();
@@ -43,10 +46,12 @@ public class AuthConfiguration {
         JwtTimestampValidator timestamps = new JwtTimestampValidator(Duration.ZERO);
         timestamps.setClock(clock);
         OAuth2TokenValidator<Jwt> claims = jwt -> {
+            var now = clock.instant();
             try {
                 if (Long.parseLong(jwt.getSubject()) <= 0 || jwt.getExpiresAt() == null
-                        || !jwt.getExpiresAt().isAfter(clock.instant())
-                        || jwt.getIssuedAt() == null || jwt.getIssuedAt().isAfter(clock.instant())
+                        || !jwt.getExpiresAt().isAfter(now)
+                        // Small wall-clock corrections must not invalidate freshly issued tokens.
+                        || jwt.getIssuedAt() == null || jwt.getIssuedAt().isAfter(now.plus(ISSUED_AT_CLOCK_SKEW))
                         || !jwt.getExpiresAt().isAfter(jwt.getIssuedAt())
                         || !jwt.getAudience().contains(properties.audience())) {
                     throw new IllegalArgumentException();
@@ -54,6 +59,12 @@ public class AuthConfiguration {
                 UserRole.valueOf(jwt.getClaimAsString("role"));
                 return OAuth2TokenValidatorResult.success();
             } catch (RuntimeException exception) {
+                LoggerFactory.getLogger(AuthConfiguration.class).atDebug()
+                        .addKeyValue("event", "jwt_claims_rejected")
+                        .addKeyValue("issued_ahead_ms", jwt.getIssuedAt() == null ? 0
+                                : Duration.between(now, jwt.getIssuedAt()).toMillis())
+                        .addKeyValue("expired", jwt.getExpiresAt() != null && !jwt.getExpiresAt().isAfter(now))
+                        .log("JWT claim validation rejected");
                 return OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token", "Invalid access token", null));
             }
         };

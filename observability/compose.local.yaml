@@ -1,4 +1,15 @@
 services:
+  grafana:
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD}
+    ports: ['127.0.0.1:3000:3000']
+  prometheus:
+    volumes:
+      - ./prometheus.local.yaml:/etc/prometheus/prometheus.yaml:ro
+    # The host scrape must leave the internal-only monitoring network.
+    networks: [observability, observability_access]
+    extra_hosts:
+      - host.docker.internal:host-gateway
   alloy:
     volumes:
       - ./alloy-local.alloy:/etc/alloy/source.alloy:ro

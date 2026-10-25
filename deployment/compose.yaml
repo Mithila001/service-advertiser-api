@@ -1,0 +1,109 @@
+name: service-advertiser-deployment
+
+include:
+  - path:
+      - ../observability/compose.yaml
+      - ../observability/compose.deployment.yaml
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+services:
+  postgres:
+    image: postgres:18
+    profiles: [database]
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      POSTGRES_DB: ${DEPLOYMENT_DB_NAME:-service_advertiser}
+      POSTGRES_USER: ${DEPLOYMENT_DB_USER:-service_advertiser}
+      POSTGRES_PASSWORD_FILE: /run/secrets/database_password
+    secrets: [database_password]
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks: [database]
+    logging: *logging
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  api:
+    image: ${APPLICATION_IMAGE:?Set a source-revision-tagged APPLICATION_IMAGE}
+    restart: unless-stopped
+    mem_limit: 768m
+    stop_grace_period: 45s
+    environment:
+      SPRING_PROFILES_ACTIVE: deployment,monitoring
+      MANAGEMENT_BIND_ADDRESS: 0.0.0.0
+      SPRING_DATASOURCE_URL: ${DEPLOYMENT_DATABASE_URL:-jdbc:postgresql://postgres:5432/service_advertiser}
+      SPRING_DATASOURCE_USERNAME: ${DEPLOYMENT_DB_USER:-service_advertiser}
+      RATE_LIMIT_ENABLED: 'true'
+      JAVA_TOOL_OPTIONS: -Xms128m -Xmx384m
+      SPRING_MAIN_BANNER_MODE: 'off'
+      TRUSTED_PROXY_REGEX: ${TRUSTED_PROXY_REGEX:-10\.203\.80\.254}
+    secrets:
+      - source: database_password
+        target: SPRING_DATASOURCE_PASSWORD
+      - source: jwt_key
+        target: JWT_SECRET_BASE64
+    volumes:
+      - application_logs:/var/log/service-advertiser
+    networks: [database, observability, ingress, api_egress]
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+    logging: *logging
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, http://localhost:8080/readyz]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+
+  caddy:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    mem_limit: 96m
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?Set SITE_ADDRESS to the public DNS hostname}
+    ports: ['80:80', '443:443']
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      ingress:
+        ipv4_address: ${CADDY_INGRESS_ADDRESS:-10.203.80.254}
+      egress: {}
+    depends_on:
+      api:
+        condition: service_healthy
+    logging: *logging
+
+networks:
+  database:
+    internal: true
+  ingress:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${DEPLOYMENT_INGRESS_SUBNET:-10.203.80.0/24}
+  egress: {}
+  api_egress: {}
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
+secrets:
+  database_password:
+    file: ${DEPLOYMENT_SECRETS_DIR:?Set DEPLOYMENT_SECRETS_DIR}/database_password
+  jwt_key:
+    file: ${DEPLOYMENT_SECRETS_DIR:?Set DEPLOYMENT_SECRETS_DIR}/jwt_key

@@ -1,0 +1,10 @@
+spring:
+  config:
+    import: "optional:file:./.env[.properties]"
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/service_advertiser}
+    username: ${SPRING_DATASOURCE_USERNAME:dev_user123}
+    password: ${SPRING_DATASOURCE_PASSWORD:dev_user123}
+
+server:
+  address: 127.0.0.1

@@ -9,10 +9,11 @@ x-logging: &logging
 services:
   loki:
     image: grafana/loki:3.7.8
-    command: [-config.file=/etc/loki/config.yaml]
+    command: [-config.file=/etc/loki/config.yaml, -config.expand-env=true]
     volumes:
       - ./loki.yaml:/etc/loki/config.yaml:ro
       - loki_data:/loki
+    restart: unless-stopped
     logging: *logging
     networks: [observability]
 
@@ -20,34 +21,62 @@ services:
     image: grafana/grafana:13.2.4
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD before starting observability}
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
-    ports: ['127.0.0.1:3000:3000']
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana-datasource.yaml:/etc/grafana/provisioning/datasources/loki.yaml:ro
+      - ./grafana-datasource.yaml:/etc/grafana/provisioning/datasources/sources.yaml:ro
+      - ./grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/application.yaml:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+    restart: unless-stopped
     logging: *logging
-    networks: [observability, access]
+    networks: [observability, observability_access]
     depends_on: [loki]
+
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://localhost:3000/api/health]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   alloy:
     image: grafana/alloy:v1.20.1
     command: [run, --storage.path=/var/lib/alloy/data, /etc/alloy/source.alloy]
     volumes:
       - alloy_data:/var/lib/alloy/data
+    restart: unless-stopped
     logging: *logging
     networks: [observability]
     depends_on: [loki]
 
+  prometheus:
+    image: prom/prometheus:v3.13.5
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=1GB
+    volumes:
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+    logging: *logging
+    networks: [observability]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://localhost:9090/-/ready]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
 networks:
   observability:
     internal: true
-  access: {}
+  observability_access: {}
 
 volumes:
   loki_data:
   grafana_data:
   alloy_data:
+  prometheus_data:

@@ -1,0 +1,33 @@
+spring:
+  config:
+    import: "configtree:/run/secrets/"
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+app:
+  auth:
+    secret-base64: ${JWT_SECRET_BASE64}
+    issuer: service-advertiser-deployment
+    audience: service-advertiser-deployment-api
+  protection:
+    rate-limit:
+      enabled: true
+
+server:
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      # Only the dedicated Caddy address is trusted; never all private networks.
+      internal-proxies: '${TRUSTED_PROXY_REGEX:10\.203\.80\.254}'
+
+logging:
+  file:
+    name: /var/log/service-advertiser/service-advertiser.json
+  structured:
+    format:
+      console: logstash

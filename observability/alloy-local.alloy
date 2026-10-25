@@ -2,7 +2,7 @@ local.file_match "application" {
   path_targets = [{
     __path__ = "/var/log/service-advertiser/service-advertiser.json",
     service_name = "service-advertiser",
-    environment = "local",
+    environment = "development",
     source = "file",
   }]
 }

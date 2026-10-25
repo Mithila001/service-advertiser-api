@@ -1,0 +1,36 @@
+name: Verify
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Unit and PostgreSQL integration tests
+        run: mvn -B test
+      - name: Deterministic simulator checks
+        run: docker compose -f simulation/compose.yaml run --rm --no-deps --entrypoint python bootstrap check.py
+      - name: Compose and image-native configuration checks
+        run: python3 infrastructure/check.py --containers
+      - name: Build shared application image
+        run: docker build -t service-advertiser:${{ github.sha }} .
+      - name: Disposable environment acceptance
+        run: python3 infrastructure/acceptance.py --image service-advertiser:${{ github.sha }}
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            target/surefire-reports/
+            target/infrastructure-acceptance.json
+            target/acceptance-*.log
+            target/phase1_*.csv

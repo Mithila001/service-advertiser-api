@@ -12,11 +12,11 @@ Run these commands in PowerShell from the repository root.
 ### First time: start the API and create sample data
 
 ```powershell
-docker compose -f simulation/compose.yaml up -d --build --wait api
+docker compose -f simulation/compose.yaml up -d --build --wait
 docker compose -f simulation/compose.yaml run --rm bootstrap
 ```
 
-The first command builds and starts the simulation API and its private database.
+The first command builds and starts the simulation API, its private database, and its own monitoring services.
 The second creates synthetic accounts and businesses. Bootstrap is a one-time
 step for this database. If you already ran it, skip it; it deliberately refuses
 to populate an existing or partly initialized database.
@@ -67,11 +67,14 @@ docker compose -f simulation/compose.yaml up -d locust
 
 ## Optional: view logs in Grafana
 
-The simulation works without the observability stack. To collect its Docker logs
-and view them in Grafana, follow the **Simulation in Docker** instructions in the
-[observability quick start](../observability/README.md). Simulation normally
-writes JSON to Docker output. Persistent application log files are optional and
-are described in the advanced section below.
+Monitoring starts with the normal full-stack command. Open Grafana at
+[localhost:3001](http://localhost:3001), username `admin`, password
+`simulation_only_grafana` (synthetic, local-only). Loki and Prometheus have independent
+simulation storage. Development Grafana can run simultaneously at localhost:3000.
+
+The API itself remains independent of monitoring: starting only `api` is useful for
+matched monitoring-overhead comparisons. Start monitoring before a measured workload
+when you need its history. See [monitoring operations](../observability/README.md).
 
 ## Advanced options
 
@@ -165,12 +168,20 @@ Only reset if you intentionally want a fresh database. Do not use the root
 development Compose file for this.
 
 ```powershell
-docker compose -f simulation/compose.yaml --profile activity --profile tools down --volumes
+docker compose -f simulation/compose.yaml --profile activity --profile tools down
+$volume = @(docker volume ls -q --filter label=com.docker.compose.project=service-advertiser-simulation --filter label=com.docker.compose.volume=simulation_data)
+if ($volume.Count -ne 1) { throw 'Expected exactly one simulation database volume' }
+docker volume inspect $volume[0] --format '{{json .Labels}}'
+# Verify ownership above before this intentional database-only deletion.
+docker volume rm $volume[0]
+if ($LASTEXITCODE -ne 0) { throw 'Volume deletion failed; keep the manifest' }
 Remove-Item -LiteralPath ./simulation/runtime/manifest.json -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath ./simulation/runtime/manifest.tmp -ErrorAction SilentlyContinue
 ```
 
-Then repeat the first-time setup. Reports remain under `simulation/results/`
+Monitoring volumes are retained. Erase their history separately only if intended;
+never use `down --volumes` as the database-only reset. Then repeat the first-time
+setup. Reports remain under `simulation/results/`
 until you remove them yourself. Keep the lock file; a stale lock filename is
 harmless and will be reused.
 
@@ -205,4 +216,21 @@ Java changes require rebuilding the API image with `--build`; Python and data
 changes are bind-mounted and need a simulator restart. Limits, task weights and
 wait times are documented constants, not a separate configuration system.
 
+On Linux the Locust image runs as UID/GID 1000. Ensure only `simulation/runtime`
+and `simulation/results` are writable by that identity, or use a local Compose
+override setting `user` on both `bootstrap` and `locust` to your host UID/GID.
+Do not make the checkout world-writable. The disposable verification runners
+automatically select the invoking Linux user's UID/GID for their own mounts.
+
 The isolated API explicitly disables rate limiting with RATE_LIMIT_ENABLED=false. Body and database limits remain active. Container termination allows 45 seconds. Verify throttling separately with protection enabled; keep Locust focused on performance.
+
+## Environment differences
+
+Simulation reuses the shared application image and PostgreSQL/Flyway schema, real
+JWT/refresh flows, and application business rules. It intentionally uses dummy
+secrets, disables rate limiting, has no public reverse proxy, and does not inherit
+the deployment resource caps. JSON/request/database protections remain enabled.
+Metrics scrape every 15 seconds; monitoring overhead affects benchmark results.
+Resettable synthetic datasets and repeatability take priority over production parity.
+Do not load real data or external credentials or expose the loopback ports publicly.
+See [verification and Phase 2](../infrastructure/verification.md) for measured runs.

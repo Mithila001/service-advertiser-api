@@ -11,6 +11,8 @@ app:
     refresh-lifetime: 7d
 
 spring:
+  profiles:
+    active: test
   jpa:
     hibernate:
       ddl-auto: validate

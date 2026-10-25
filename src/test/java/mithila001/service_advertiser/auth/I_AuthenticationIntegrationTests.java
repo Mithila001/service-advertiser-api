@@ -91,6 +91,25 @@ class I_AuthenticationIntegrationTests extends PostgresTestSupport {
     }
 
     @Test
+    void loginAndRefreshTokensSurviveSmallClockRollbackButKeepValidationBoundaries() throws Exception {
+        String email = register();
+        when(clock.instant()).thenReturn(NOW.plusMillis(500));
+        TokenResponse first = login(email);
+        TokenResponse refreshed = service.refresh(first.refreshToken());
+        when(clock.instant()).thenReturn(NOW.minusMillis(250));
+        for (String token : new String[] {first.accessToken(), refreshed.accessToken()}) {
+            mvc.perform(get("/test/identity").header("Authorization", "Bearer " + token))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(userId(email).toString()));
+        }
+        when(clock.instant()).thenReturn(NOW.minusSeconds(61));
+        mvc.perform(get("/test/identity").header("Authorization", "Bearer " + refreshed.accessToken()))
+                .andExpect(status().isUnauthorized());
+        when(clock.instant()).thenReturn(NOW.plusSeconds(900));
+        mvc.perform(get("/test/identity").header("Authorization", "Bearer " + refreshed.accessToken()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void invalidCredentialsAndInactiveAccountsShareTheSameError() throws Exception {
         String email = register();
         String expected = loginError(email, "wrong-password");

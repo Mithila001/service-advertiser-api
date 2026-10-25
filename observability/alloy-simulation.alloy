@@ -3,7 +3,7 @@ discovery.docker "application" {
   filter {
     name = "label"
     values = [
-      "com.docker.compose.project=service-advertiser-simulation",
+      "com.docker.compose.project=" + sys.env("ALLOY_COMPOSE_PROJECT"),
       "com.docker.compose.service=api",
     ]
   }
