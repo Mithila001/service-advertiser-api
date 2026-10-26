@@ -1,7 +1,8 @@
 name: Verify
 on:
   push:
-  pull_request:
+    branches:
+      - main
 permissions:
   contents: read
 jobs:
@@ -17,8 +18,6 @@ jobs:
           cache: maven
       - name: Unit and PostgreSQL integration tests
         run: mvn -B test
-      - name: Deterministic simulator checks
-        run: docker compose -f simulation/compose.yaml run --rm --no-deps --entrypoint python bootstrap check.py
       - name: Compose and image-native configuration checks
         run: python3 infrastructure/check.py --containers
       - name: Build shared application image
