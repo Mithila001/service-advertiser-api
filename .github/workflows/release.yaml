@@ -1,0 +1,74 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  RELEASE_TAG: ${{ github.ref_name }}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate tagged source
+        id: source
+        run: |
+          python3 infrastructure/check_version.py --tag "$RELEASE_TAG"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Require prior CI and unpublished release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 infrastructure/release.py verify
+      - uses: actions/setup-java@v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Container-native configuration checks
+        run: python3 infrastructure/check.py --containers
+      - name: Build temporary application image
+        env:
+          COMMIT: ${{ steps.source.outputs.commit }}
+        run: docker build -t "service-advertiser:$COMMIT" .
+      - name: Disposable environment acceptance
+        env:
+          COMMIT: ${{ steps.source.outputs.commit }}
+        run: python3 infrastructure/acceptance.py --image "service-advertiser:$COMMIT"
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: release-acceptance-reports
+          retention-days: 7
+          path: |
+            target/infrastructure-acceptance.json
+            target/acceptance-*.log
+            target/phase1_*.csv
+  draft:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.commit }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Create or preserve unpublished draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 infrastructure/release.py draft

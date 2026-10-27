@@ -1,5 +1,8 @@
 # Service Advertiser API
 
+See the [release management guide](docs/for-dev/release-management.md) for manual
+versions, main-only CI, tag verification and human publication of draft releases.
+
 ## Docker environments
 
 Development runs Spring Boot locally with Docker PostgreSQL and optional monitoring.

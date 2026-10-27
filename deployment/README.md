@@ -12,6 +12,11 @@ can also step after sleep/resume; check host/VM time before performance comparis
 
 ## Build and transfer
 
+For a selected published release, use a clean checkout of its Git version tag
+before building. See [release management](../docs/for-dev/release-management.md).
+Publishing a GitHub Release does not deploy it; its CI image is temporary, so
+build and transfer manually using this runbook and retain the source revision.
+
 Build on a development/CI machine, not the small VM. Use the same image for
 Simulation and Deployment, and keep its source revision with backups.
 

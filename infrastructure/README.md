@@ -114,6 +114,16 @@ configuration, asserts exposure/isolation/resource rules, and optionally runs
 image-native validators. It does not start application environments or delete
 volumes. The live acceptance runner is documented in [verification](verification.md).
 
+## CI and release verification
+
+Main pushes run Maven tests, version/helper checks and plain infrastructure
+configuration checks. Tag pushes run container-native checks, one temporary image
+build and disposable acceptance before creating a release draft. This keeps heavy
+verification off ordinary merges; standalone simulation and benchmarking remain
+manual. See the [release guide](../docs/for-dev/release-management.md) for commands,
+permissions and seven-day report retention. The linked verification document
+preserves historical results; it is not proof of a new remote workflow run.
+
 ## Architecture and limits
 
 Shared application configuration owns business behavior and reliability defaults;

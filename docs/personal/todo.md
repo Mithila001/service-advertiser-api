@@ -5,10 +5,11 @@ Load Testing
 Security Testing
 Database Recovery
 Rate Limit, Time Out, recovery
+CI
+Deployment
 
 ## Not Completed
-CI CD
-Deployment
+CD
 Load Balancing 
 Performance Optimization
 Alerting
