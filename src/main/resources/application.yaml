@@ -81,8 +81,8 @@ logging:
       clean-history-on-start: true
   level:
     # SQL error details can contain submitted values; the advice owns API diagnostics.
-    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: 'OFF'
-    org.hibernate.orm.jdbc.error: 'OFF'
+    '[org.hibernate.engine.jdbc.spi.SqlExceptionHelper]': 'OFF'
+    '[org.hibernate.orm.jdbc.error]': 'OFF'
 
 management:
   endpoints:

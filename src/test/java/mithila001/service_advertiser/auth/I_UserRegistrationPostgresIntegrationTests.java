@@ -103,7 +103,7 @@ class I_UserRegistrationPostgresIntegrationTests extends PostgresTestSupport {
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         var response = mapper.readTree(body);
-        assertEquals(NOW, java.time.Instant.parse(response.get("createdAt").asText()));
+        assertEquals(NOW, java.time.Instant.parse(response.get("createdAt").asString()));
         assertEquals(NOW, jdbcTemplate.queryForObject("SELECT created_at FROM users WHERE id=?",
                 java.time.OffsetDateTime.class, response.get("id").asLong()).toInstant());
         assertTrue(!response.has("phone"));

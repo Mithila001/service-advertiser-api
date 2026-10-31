@@ -87,8 +87,8 @@ class I_ItemIntegrationTests extends PostgresTestSupport {
             boolean found = false;
             for (var value : result) {
                 if (value.get("id").asLong() == item.id()) {
-                    assertEquals(owner.uniqueName, value.get("businessUniqueName").asText());
-                    assertEquals("Renamed", value.get("businessName").asText());
+                    assertEquals(owner.uniqueName, value.get("businessUniqueName").asString());
+                    assertEquals("Renamed", value.get("businessName").asString());
                     found = true;
                 }
             }

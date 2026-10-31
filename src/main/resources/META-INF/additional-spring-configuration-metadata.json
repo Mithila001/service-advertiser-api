@@ -1,0 +1,25 @@
+{
+  "properties": [
+    { "name": "app.protection.max-json-body-size", "type": "org.springframework.util.unit.DataSize" },
+    { "name": "app.protection.rate-limit.enabled", "type": "java.lang.Boolean" },
+    { "name": "app.protection.rate-limit.login-ip.capacity", "type": "java.lang.Long" },
+    { "name": "app.protection.rate-limit.login-ip.period", "type": "java.time.Duration" },
+    { "name": "app.protection.rate-limit.login-account-ip.capacity", "type": "java.lang.Long" },
+    { "name": "app.protection.rate-limit.login-account-ip.period", "type": "java.time.Duration" },
+    { "name": "app.protection.rate-limit.register-ip.capacity", "type": "java.lang.Long" },
+    { "name": "app.protection.rate-limit.register-ip.period", "type": "java.time.Duration" },
+    { "name": "app.protection.rate-limit.refresh-ip.capacity", "type": "java.lang.Long" },
+    { "name": "app.protection.rate-limit.refresh-ip.period", "type": "java.time.Duration" },
+    { "name": "app.pagination.default-size", "type": "java.lang.Integer" },
+    { "name": "app.pagination.max-size", "type": "java.lang.Integer" },
+    { "name": "app.pagination.max-offset", "type": "java.lang.Long" },
+    { "name": "app.categories.max-per-business", "type": "java.lang.Integer" },
+    { "name": "app.categories.max-per-item", "type": "java.lang.Integer" },
+    { "name": "app.items.max-per-business", "type": "java.lang.Integer" },
+    { "name": "app.auth.secret-base64", "type": "java.lang.String" },
+    { "name": "app.auth.issuer", "type": "java.lang.String" },
+    { "name": "app.auth.audience", "type": "java.lang.String" },
+    { "name": "app.auth.access-lifetime", "type": "java.time.Duration" },
+    { "name": "app.auth.refresh-lifetime", "type": "java.time.Duration" }
+  ]
+}
