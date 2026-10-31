@@ -1,7 +1,7 @@
 package mithila001.service_advertiser.business;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -45,7 +45,7 @@ public class BusinessService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Business unique name is already registered");
         }
         var provider = roles.findByName(UserRole.PROVIDER).orElseThrow(RoleNotFoundException::new);
-        LocalDateTime now = LocalDateTime.now(clock);
+        Instant now = clock.instant();
         var city = locations.requireCity(request.information().cityId());
         Business business = new Business(request.uniqueName(), request.information(), city, now);
         business.setCategories(categories.businessSelection(request.information().categoryIds()));
@@ -64,7 +64,7 @@ public class BusinessService {
         Business business = ownedBusiness(activeUser(userId));
         requireActive(business);
         var city = locations.requireCity(information.cityId());
-        business.update(information, city, LocalDateTime.now(clock));
+        business.update(information, city, clock.instant());
         business.setCategories(categories.businessSelection(information.categoryIds()));
         return BusinessResponse.from(business);
     }
@@ -76,7 +76,7 @@ public class BusinessService {
         var customer = roles.findByName(UserRole.CUSTOMER).orElseThrow(RoleNotFoundException::new);
         user.setBusinessId(null);
         user.setRole(customer);
-        user.setUpdatedAt(LocalDateTime.now(clock));
+        user.setUpdatedAt(clock.instant());
         // Release the existing foreign key before deleting its target.
         users.flush();
         businesses.delete(business);

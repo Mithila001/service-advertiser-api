@@ -31,7 +31,7 @@ public class BusinessController {
 
     @Operation(summary = "Register your business", description =
             "Requires an active CUSTOMER with no business. Creates an ACTIVE business and changes your role " +
-            "to PROVIDER. Refresh or log in to update your token's role.")
+            "to PROVIDER. Requires a street addressLine1 and catalog cityId. Refresh or log in to update your token's role.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Business created"),

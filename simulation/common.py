@@ -354,7 +354,7 @@ class State:
 
 def register(api, state, account):
     body = api.call("POST", "/api/v1/auth/register",
-                    {key: account[key] for key in ("name", "email", "password")},
+                    {**{key: account[key] for key in ("name", "email", "password")}, "phone": "+94771234567"},
                     expected=(201,), required=("id", "role"))
     if body["role"] != "CUSTOMER":
         raise SimulationError("Registration did not return CUSTOMER")

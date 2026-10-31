@@ -1,6 +1,6 @@
 package mithila001.service_advertiser.business;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import jakarta.persistence.*;
 import mithila001.service_advertiser.user.User;
 
@@ -21,12 +21,12 @@ public class BusinessModerationEvent {
     @Column(length = 500)
     private String reason;
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     protected BusinessModerationEvent() {}
 
     public BusinessModerationEvent(Business business, User admin, BusinessModerationAction action,
-            String reason, LocalDateTime createdAt) {
+            String reason, Instant createdAt) {
         this.business = business;
         this.admin = admin;
         this.action = action;
@@ -39,5 +39,5 @@ public class BusinessModerationEvent {
     public User getAdmin() { return admin; }
     public BusinessModerationAction getAction() { return action; }
     public String getReason() { return reason; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Instant getCreatedAt() { return createdAt; }
 }

@@ -17,19 +17,6 @@ def pages(endpoint):
     return json.loads(gh('api', '--paginate', '--slurp', endpoint))
 
 
-def successful_verify(repo, sha):
-    endpoint = (f'repos/{repo}/actions/workflows/verify.yaml/runs'
-                f'?head_sha={sha}&branch=main&event=push&per_page=100')
-    for page in pages(endpoint):
-        for run in page['workflow_runs']:
-            if (run['head_sha'] == sha and run['head_branch'] == 'main'
-                    and run['event'] == 'push' and run['status'] == 'completed'
-                    and run['conclusion'] == 'success' and run['name'] == 'Verify'
-                    and run['path'] == '.github/workflows/verify.yaml'):
-                return run['html_url']
-    raise ValueError('No successful main-push Verify run for the exact tagged commit')
-
-
 def existing_draft(repo, tag):
     matches = [release for page in pages(f'repos/{repo}/releases?per_page=100')
                for release in page if release['tag_name'] == tag]
@@ -58,8 +45,6 @@ def main():
         gh_ref = json.loads(gh('api', f'repos/{repo}/git/tags/{gh_ref["sha"]}'))['object']
     if gh_ref['type'] != 'commit' or gh_ref['sha'] != sha:
         raise ValueError('Remote tag no longer identifies the verified source')
-    if args.mode == 'verify':
-        summary('Prior Verify CI: ' + successful_verify(repo, sha))
     draft = existing_draft(repo, tag)
     if args.mode == 'draft':
         if not draft:

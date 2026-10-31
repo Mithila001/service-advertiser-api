@@ -1,7 +1,7 @@
 package mithila001.service_advertiser.item;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
@@ -43,21 +43,22 @@ public class ItemService {
         if (items.countByBusinessId(business.getId()) >= maxPerBusiness) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Business item limit reached");
         }
-        Item item = new Item(business.getId(), request, LocalDateTime.now(clock));
+        Item item = new Item(business.getId(), request, clock.instant());
         item.setCategories(categories.itemSelection(request.categoryIds()));
-        return ItemResponse.from(items.save(item));
+        return ItemResponse.from(items.save(item), business);
     }
 
     public List<ItemResponse> own(Long userId) {
         Business business = businesses.providerBusiness(userId);
-        return items.findByBusinessIdOrderByIdAsc(business.getId()).stream().map(ItemResponse::from).toList();
+        return items.findByBusinessIdOrderByIdAsc(business.getId()).stream().map(item -> ItemResponse.from(item, business)).toList();
     }
 
     public ItemResponse update(Long userId, Long id, UpdateItemRequest request) {
-        Item item = ownedItem(id, mutableBusiness(userId));
-        item.update(request, LocalDateTime.now(clock));
+        Business business = mutableBusiness(userId);
+        Item item = ownedItem(id, business);
+        item.update(request, clock.instant());
         if (request.hasCategoryIds()) item.setCategories(categories.itemSelection(request.getCategoryIds()));
-        return ItemResponse.from(item);
+        return ItemResponse.from(item, business);
     }
 
     public void delete(Long userId, Long id) {

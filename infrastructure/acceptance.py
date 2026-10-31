@@ -181,7 +181,7 @@ def main():
                     query = json.loads(internal(kind, 'http://localhost:9090/api/v1/query?' + urlencode({'query': 'up'})))
                     return any(item['value'][1] == '1' for item in query['data']['result'])
                 eventually(scraped, kind + ' Prometheus scrape')
-            payload = {'name': 'Infrastructure Test', 'email': 'infra@example.test', 'password': 'Infrastructure_only_1!'}
+            payload = {'name': 'Infrastructure Test', 'email': 'infra@example.test', 'password': 'Infrastructure_only_1!', 'phone': '+94771234567'}
             assert http(deploy_base, '/api/v1/auth/register', payload)[0] == 201
             status, body = http(deploy_base, '/api/v1/auth/login', {k: payload[k] for k in ('email', 'password')})
             assert status == 200
@@ -254,7 +254,7 @@ def main():
             assert status == 200
             city = json.loads(cities)['content'][0]['id']
             assert http(deploy_base, '/api/v1/businesses', {
-                'uniqueName': 'restored_business', 'information': {'name': 'Restore verification', 'cityId': city}
+                'uniqueName': 'restored_business', 'information': {'name': 'Restore verification', 'cityId': city, 'addressLine1': '123 Main Street'}
             }, restored_auth)[0] == 201
             assert http(deploy_base, '/api/v1/businesses/me', headers=restored_auth)[0] == 200
             assert sql('deploy', 'SELECT count(*) FROM business') == '0'

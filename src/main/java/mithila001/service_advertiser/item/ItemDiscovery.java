@@ -23,7 +23,11 @@ final class ItemDiscovery {
             var predicates = new ArrayList<Predicate>();
             predicates.add(cb.equal(root.<ItemStatus>get("status"), ItemStatus.ACTIVE));
             predicates.add(cb.equal(root.get("business").<BusinessStatus>get("status"), BusinessStatus.ACTIVE));
-            if (!text.isEmpty()) predicates.add(cb.like(cb.lower(root.get("title")), SearchText.likePattern(text), '\\'));
+            if (!text.isEmpty()) {
+                String pattern = SearchText.likePattern(text);
+                predicates.add(cb.or(cb.like(cb.lower(root.get("title")), pattern, '\\'),
+                        cb.like(cb.lower(root.get("description")), pattern, '\\')));
+            }
             if (type != null) predicates.add(cb.equal(root.<ItemType>get("type"), type));
             if (cityId != null) predicates.add(cb.equal(root.get("business").get("cityCatalogEntry").get("id"), cityId));
             if (districtId != null) predicates.add(cb.equal(root.get("business").get("cityCatalogEntry").get("district").get("id"), districtId));

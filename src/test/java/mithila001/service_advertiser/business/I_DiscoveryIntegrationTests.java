@@ -34,15 +34,40 @@ class I_DiscoveryIntegrationTests extends PostgresTestSupport {
 
     private int business(String name, int cityId, List<Integer> categoryIds) {
         String email = UUID.randomUUID() + "@example.com";
-        long userId = registration.register(new RegisterRequest("Owner", email, "SecurePass123!")).id();
+        long userId = registration.register(new RegisterRequest("Owner", email, "SecurePass123!", "+94771234567")).id();
         String uniqueName = "discover_" + UUID.randomUUID().toString().replace("-", "");
-        var information = new BusinessInformationRequest(name, null, null, null, null, null, null,
+        var information = new BusinessInformationRequest(name, null, null, null, null, "123 Main Street", null,
                 cityId, null, null, null, null, categoryIds);
         return businesses.register(userId, new RegisterBusinessRequest(uniqueName, information)).id();
     }
 
     private void item(long ownerId, String title, BigDecimal price, List<Integer> categoryIds) {
         items.create(ownerId, new CreateItemRequest(title, null, ItemType.PRODUCT, price, categoryIds));
+    }
+
+    @Test
+    void descriptionSearchUsesLiteralCaseInsensitiveTextAndPreservesVisibility() throws Exception {
+        int businessId = business("Description search", 1, List.of(8));
+        String term = "only_" + UUID.randomUUID().toString().replace("-", "") + "%";
+        jdbc.update("UPDATE business SET description=? WHERE id=?", term, businessId);
+        long owner = jdbc.queryForObject("SELECT id FROM users WHERE business_id=?", Long.class, businessId);
+        var item = items.create(owner, new CreateItemRequest("Unrelated title", term, ItemType.PRODUCT,
+                BigDecimal.TEN, List.of(13)));
+        for (String path : List.of("/api/v1/businesses", "/api/v1/items")) {
+            mvc.perform(get(path).param("q", term.toUpperCase(java.util.Locale.ROOT)).param("cityId", "1"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
+            mvc.perform(get(path).param("q", term.replace("_", "X").replace("%", "X")))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(0));
+        }
+        mvc.perform(get("/api/v1/items").param("q", term).param("minPrice", "11"))
+                .andExpect(jsonPath("$.totalElements").value(0));
+        jdbc.update("UPDATE items SET status='INACTIVE' WHERE id=?", item.id());
+        mvc.perform(get("/api/v1/items").param("q", term)).andExpect(jsonPath("$.totalElements").value(0));
+        jdbc.update("UPDATE items SET status='ACTIVE' WHERE id=?", item.id());
+        jdbc.update("UPDATE business SET status='SUSPENDED' WHERE id=?", businessId);
+        for (String path : List.of("/api/v1/businesses", "/api/v1/items")) {
+            mvc.perform(get(path).param("q", term)).andExpect(jsonPath("$.totalElements").value(0));
+        }
     }
 
     @Test

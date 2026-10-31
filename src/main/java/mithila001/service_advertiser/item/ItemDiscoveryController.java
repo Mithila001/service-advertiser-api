@@ -33,7 +33,7 @@ public class ItemDiscoveryController {
     })
     @GetMapping
     public PageResponse<ItemResponse> search(
-            @Parameter(description = "Case-insensitive title substring; trimmed, maximum 150 characters. No wildcard matching.")
+            @Parameter(description = "Case-insensitive title or description substring; trimmed, maximum 150 characters. No wildcard matching.")
             @RequestParam(required = false) String q,
             @Parameter(description = "Matches any selected category. Use unique, positive catalog IDs, comma-separated or repeated. Omit for all categories.")
             @RequestParam(required = false) List<Integer> categoryIds,

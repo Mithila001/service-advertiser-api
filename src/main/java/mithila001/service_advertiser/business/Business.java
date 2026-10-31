@@ -2,7 +2,7 @@ package mithila001.service_advertiser.business;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import mithila001.service_advertiser.category.BusinessCategory;
@@ -51,9 +51,9 @@ public class Business {
     @Column(nullable = false, length = 20)
     private BusinessStatus status;
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "business_category_assignments",
             joinColumns = @JoinColumn(name = "business_id"),
@@ -62,14 +62,14 @@ public class Business {
 
     protected Business() {}
 
-    public Business(String uniqueName, BusinessInformationRequest information, City cityCatalogEntry, LocalDateTime now) {
+    public Business(String uniqueName, BusinessInformationRequest information, City cityCatalogEntry, Instant now) {
         this.uniqueName = uniqueName;
         this.status = BusinessStatus.ACTIVE;
         this.createdAt = now;
         update(information, cityCatalogEntry, now);
     }
 
-    public void update(BusinessInformationRequest information, City cityCatalogEntry, LocalDateTime now) {
+    public void update(BusinessInformationRequest information, City cityCatalogEntry, Instant now) {
         this.name = information.name();
         this.description = information.description();
         this.phone = information.phone();
@@ -91,11 +91,11 @@ public class Business {
         this.categories.clear();
         categories.forEach(this.categories::add);
     }
-    public void suspend(LocalDateTime now) {
+    public void suspend(Instant now) {
         this.status = BusinessStatus.SUSPENDED;
         this.updatedAt = now;
     }
-    public void activate(LocalDateTime now) {
+    public void activate(Instant now) {
         this.status = BusinessStatus.ACTIVE;
         this.updatedAt = now;
     }
@@ -117,7 +117,7 @@ public class Business {
     public String getLogoUrl() { return logoUrl; }
     public City getCityCatalogEntry() { return cityCatalogEntry; }
     public BusinessStatus getStatus() { return status; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
     public Set<BusinessCategory> getCategories() { return categories; }
 }

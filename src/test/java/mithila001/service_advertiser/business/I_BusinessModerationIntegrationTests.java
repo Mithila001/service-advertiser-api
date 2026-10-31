@@ -41,12 +41,12 @@ class I_BusinessModerationIntegrationTests extends PostgresTestSupport {
     private record Account(long id, String token) {}
     private Account account(boolean admin) {
         String email = UUID.randomUUID() + "@example.com";
-        long id = registration.register(new RegisterRequest("Moderator test", email, "SecurePass123!")).id();
+        long id = registration.register(new RegisterRequest("Moderator test", email, "SecurePass123!", "+94771234567")).id();
         if (admin) jdbc.update("UPDATE users SET role_id=(SELECT id FROM roles WHERE name='ADMIN') WHERE id=?", id);
         return new Account(id, auth.login(new LoginRequest(email, "SecurePass123!")).accessToken());
     }
     private BusinessInformationRequest information(String name) {
-        return new BusinessInformationRequest(name, null, null, null, null, null, null,
+        return new BusinessInformationRequest(name, null, null, null, null, "123 Main Street", null,
                 1, null, null, null, null, List.of());
     }
     private BusinessResponse business(Account owner) {
@@ -81,7 +81,7 @@ class I_BusinessModerationIntegrationTests extends PostgresTestSupport {
         }
         mvc.perform(as(get("/api/v1/businesses/me"), owner)).andExpect(status().isOk());
         mvc.perform(as(put("/api/v1/businesses/me"), owner).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Changed\",\"cityId\":1}" )).andExpect(status().isForbidden());
+                .content("{\"name\":\"Changed\",\"addressLine1\":\"123 Main Street\",\"cityId\":1}" )).andExpect(status().isForbidden());
         mvc.perform(as(delete("/api/v1/businesses/me"), owner)).andExpect(status().isForbidden());
         mvc.perform(as(post("/api/v1/businesses/me/items"), owner).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"New\",\"type\":\"PRODUCT\"}" )).andExpect(status().isForbidden());
@@ -100,6 +100,7 @@ class I_BusinessModerationIntegrationTests extends PostgresTestSupport {
         mvc.perform(as(get(path + "/history"), admin)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].action").value("ACTIVATED"))
+                .andExpect(jsonPath("$[0].createdAt", org.hamcrest.Matchers.endsWith("Z")))
                 .andExpect(jsonPath("$[1].action").value("SUSPENDED"))
                 .andExpect(jsonPath("$[1].adminId").value(admin.id()))
                 .andExpect(jsonPath("$[1].businessId").value(business.id()))

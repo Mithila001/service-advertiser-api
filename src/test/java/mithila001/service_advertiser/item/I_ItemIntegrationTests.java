@@ -37,12 +37,12 @@ class I_ItemIntegrationTests extends PostgresTestSupport {
     private record Owner(long userId, String token, String uniqueName, int businessId) {}
     private Owner owner(boolean withBusiness) {
         String email = UUID.randomUUID() + "@example.com";
-        long id = registration.register(new RegisterRequest("Owner", email, "SecurePass123!")).id();
+        long id = registration.register(new RegisterRequest("Owner", email, "SecurePass123!", "+94771234567")).id();
         String token = auth.login(new LoginRequest(email, "SecurePass123!")).accessToken();
         String name = "items_" + UUID.randomUUID().toString().replace("-", "");
         int businessId = 0;
         if (withBusiness) {
-            var info = new BusinessInformationRequest("Business", null, null, null, null, null, null, 1,
+            var info = new BusinessInformationRequest("Business", null, null, null, null, "123 Main Street", null, 1,
                     null, null, null, null, null);
             businessId = businesses.register(id, new RegisterBusinessRequest(name, info)).id();
         }
@@ -63,8 +63,42 @@ class I_ItemIntegrationTests extends PostgresTestSupport {
         String response = mvc.perform(json(as(post("/api/v1/businesses/me/items"), owner), body))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.businessId").value(owner.businessId))
+                .andExpect(jsonPath("$.createdAt", org.hamcrest.Matchers.endsWith("Z")))
+                .andExpect(jsonPath("$.updatedAt", org.hamcrest.Matchers.endsWith("Z")))
                 .andReturn().getResponse().getContentAsString();
         return mapper.readValue(response, ItemResponse.class);
+    }
+
+    @Test
+    void returnsCurrentBusinessIdentityOnEveryReadAndRejectsUnknownPatch() throws Exception {
+        Owner owner = owner(true);
+        ItemResponse item = create(owner, "SERVICE", null);
+        var titleUpdate = new UpdateItemRequest();
+        titleUpdate.setTitle(owner.uniqueName);
+        item = items.update(owner.userId, item.id(), titleUpdate);
+        assertEquals(owner.uniqueName, item.businessUniqueName());
+        assertEquals("Business", item.businessName());
+        jdbc.update("UPDATE business SET name = ? WHERE id = ?", "Renamed", owner.businessId);
+        for (String path : List.of("/api/v1/items/" + item.id(),
+                "/api/v1/items?q=" + owner.uniqueName, "/api/v1/businesses/" + owner.uniqueName + "/items")) {
+            var response = mapper.readTree(mvc.perform(get(path)).andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString());
+            var result = response.has("content") ? response.get("content") : mapper.createArrayNode().add(response);
+            boolean found = false;
+            for (var value : result) {
+                if (value.get("id").asLong() == item.id()) {
+                    assertEquals(owner.uniqueName, value.get("businessUniqueName").asText());
+                    assertEquals("Renamed", value.get("businessName").asText());
+                    found = true;
+                }
+            }
+            assertTrue(found);
+        }
+        mvc.perform(json(as(patch("/api/v1/items/" + item.id()), owner), Map.of("title", "Changed", "typo", true)))
+                .andExpect(status().isBadRequest());
+        assertEquals(item.title(), items.publicItem(item.id()).title());
+        assertEquals("Renamed", items.own(owner.userId).getFirst().businessName());
+        assertEquals("Renamed", items.update(owner.userId, item.id(), new UpdateItemRequest()).businessName());
     }
 
     @Test
@@ -179,9 +213,11 @@ class I_ItemIntegrationTests extends PostgresTestSupport {
         mvc.perform(as(delete("/api/v1/items/" + item.id()), other)).andExpect(status().isNotFound());
         mvc.perform(json(as(post("/api/v1/businesses/me/items"), customer), Map.of("title", "Item", "type", "PRODUCT")))
                 .andExpect(status().isForbidden());
-        // Client ownership fields have no effect.
+        // Unsupported ownership/status inputs are rejected before creation.
         mvc.perform(json(as(post("/api/v1/businesses/me/items"), other),
                 Map.of("title", "Mine", "type", "SERVICE", "businessId", owner.businessId, "status", "INACTIVE")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(json(as(post("/api/v1/businesses/me/items"), other), Map.of("title", "Mine", "type", "SERVICE")))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.businessId").value(other.businessId))
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
         jdbc.update("UPDATE users SET role_id = (SELECT id FROM roles WHERE name = 'CUSTOMER') WHERE id = ?", owner.userId);

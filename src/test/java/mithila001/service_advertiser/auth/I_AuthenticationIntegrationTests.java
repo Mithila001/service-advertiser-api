@@ -303,7 +303,7 @@ class I_AuthenticationIntegrationTests extends PostgresTestSupport {
 
     private String register() {
         String email = UUID.randomUUID() + "@example.com";
-        registration.register(new RegisterRequest("Auth Test", email, PASSWORD));
+        registration.register(new RegisterRequest("Auth Test", email, PASSWORD, "+94771234567"));
         return email;
     }
 

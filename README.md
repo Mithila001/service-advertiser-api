@@ -1,7 +1,7 @@
 # Service Advertiser API
 
 See the [release management guide](docs/for-dev/release-management.md) for manual
-versions, main-only CI, tag verification and human publication of draft releases.
+versions, PR CI, tagged-source verification and human publication of draft releases.
 
 ## Docker environments
 
@@ -92,8 +92,20 @@ Start PostgreSQL, then run `mvn spring-boot:run` from the project root.
 
 ## Login and token lifecycle
 
-`POST /api/v1/auth/register` retains its existing registration contract and does
-not automatically log in. The following JSON endpoints require no access JWT;
+`POST /api/v1/auth/register` requires `name`, `email`, `password`, and `phone`;
+it creates a CUSTOMER without automatically logging in. Example:
+
+```json
+{"name":"Example Customer","email":"customer@example.com","password":"ExamplePass123!","phone":"+94771234567"}
+```
+
+Phone values are trimmed, limited to 32 characters and 7?15 digits, and may use
+an optional leading `+`, spaces, parentheses and hyphens. Leading zeros and
+formatting are preserved. Account phone is private: it is not returned in API
+responses or JWTs and is not copied to the optional public `business.phone`.
+Unknown JSON request properties, including nested properties, return 400.
+Event timestamps in registration, business, item and moderation responses are
+ISO-8601 UTC instants with `Z`. The following JSON endpoints require no access JWT;
 omit `Authorization` when calling them.
 
 ```http
@@ -195,6 +207,7 @@ Registration example (requires a customer access JWT):
   "information": {
     "name": "Colombo Services",
     "cityId": 1,
+    "addressLine1": "123 Main Street",
     "description": "Local services",
     "phone": "+94112345678"
   }
@@ -202,17 +215,20 @@ Registration example (requires a customer access JWT):
 ```
 
 `uniqueName` accepts 3 to 50 lowercase ASCII letters, numbers, or underscores and
-cannot be changed. Display names may repeat. `information` requires `cityId` from
-the public location catalog and also accepts `email`, `websiteUrl`, `addressLine1`,
+cannot be changed. Display names may repeat. `information` requires a nonblank `addressLine1` (up to 255 characters) and `cityId` from
+the public location catalog and also accepts `email`, `websiteUrl`,
 `addressLine2`, `postalCode`,
 `latitude`, `longitude`, and `logoUrl` (an existing URL field; no upload endpoint).
+Optional `websiteUrl` and `logoUrl` must be absolute HTTP(S) URLs with a host,
+up to 500 characters. Null/omission clears them on PUT; empty, blank, malformed,
+relative and unsupported-scheme values return 400. URLs are never fetched.
 Coordinates are optional and limited to latitude from -90 to 90 and longitude from -180 to 180, with
 up to seven fractional digits. Responses contain `id`, `uniqueName`, `information`,
 `status`, `createdAt`, and `updatedAt`.
 
 Responses include the canonical `city`, `district`, and `province` names plus
 `cityId`, `districtId`, and `provinceId`. PUT takes the information object directly;
-name and `cityId` are required and omitted optional fields are cleared. Location
+name, `addressLine1`, and `cityId` are required and omitted optional fields are cleared. Location
 names are derived from the selected city. Unique name, status, business ID, and timestamps are not editable.
 `categoryIds` can select up to three business categories and is cleared when omitted.
 Registration creates an ACTIVE business and switches CUSTOMER to PROVIDER atomically.
@@ -261,7 +277,7 @@ Each entry contains `id`, `name`, and `description`. Supply category IDs when
 registering a business inside `information`, or when creating an item:
 
 ```json
-{"uniqueName":"colombo_services","information":{"name":"Colombo Services","cityId":1,"categoryIds":[20,23]}}
+{"uniqueName":"colombo_services","information":{"name":"Colombo Services","cityId":1,"addressLine1":"123 Main Street","categoryIds":[20,23]}}
 ```
 
 ```json
@@ -296,10 +312,13 @@ Create example:
 {"title":"Home cleaning","type":"SERVICE","description":"Two hours","price":2500.00,"categoryIds":[13]}
 ```
 
+Item responses include `businessId`, `businessUniqueName` (public profile lookup key),
+and the current `businessName`, including create/update/owner responses.
+
 Title (up to 150 characters) and type (`PRODUCT` or `SERVICE`) are required.
 Description and price are optional. Price uses a nonnegative decimal with up to
 17 integer digits and two fractional digits. Null price means unspecified; zero
-means free. Client-supplied business IDs do not control ownership. New items
+means free. Client-supplied business IDs and status on creation are unsupported and return 400. New items
 always start ACTIVE.
 
 PATCH accepts `title`, `description`, `type`, `price`, `status` (`ACTIVE` or
@@ -330,7 +349,7 @@ removes all its items while retaining the user and authentication sessions.
 ## Public discovery
 
 Business search and item search are separate public endpoints. Search matches the
-business name or item title, respectively, using trimmed, case-insensitive literal
+business name/description or item title/description, respectively, using trimmed, case-insensitive literal
 substring matching. Search text is limited to 150 characters. Category IDs use
 ANY matching; other filters combine with AND.
 
@@ -404,3 +423,16 @@ See .env.example for RATE_LIMIT_* capacity/period settings, RATE_LIMIT_ENABLED,
 JSON_MAX_REQUEST_SIZE, DB_CONNECTION_TIMEOUT_MS, DB_VALIDATION_TIMEOUT_MS,
 DB_STATEMENT_TIMEOUT_MS, and SHUTDOWN_GRACE_PERIOD. Keep validation timeout below
 connection timeout. Disabling rate limits does not disable body or database limits.
+
+## V8 schema upgrade
+
+V8 adds mandatory private account phone and business street address, and converts
+user/business/item/moderation event columns to TIMESTAMPTZ. Earlier Flyway migrations
+remain unchanged. Historical timezone-less timestamps are interpreted as UTC.
+This is a breaking request/schema change: existing accounts have no phone, so V8
+fails on a populated account table rather than inventing contact details.
+
+For disposable development data, follow the label-checked [development reset](infrastructure/README.md#intentional-development-reset).
+For simulation, use its [paired database/manifest reset](simulation/README.md#reset-and-erase-the-simulation).
+Do not reset deployment databases. An existing deployment requires separately
+agreed remediation using real phone/address data before this upgrade.

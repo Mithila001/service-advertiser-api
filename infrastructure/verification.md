@@ -409,3 +409,34 @@ The benchmark driver now records these telemetry and volume measurements in
 addition to Locust reports and `docker stats`; its 10-user/30-second smoke also
 passed. The script change is in `infrastructure/benchmark.py`. The CI workflow
 still has no remote success result.
+
+## 2026-10-31: approved review fixes
+
+Implemented account phone/street-address contracts, strict JSON and HTTP(S) URL
+validation, item business identity, description search, Instant/TIMESTAMPTZ event
+fields, PR Verify/tag-source Release checks, and protection-code readability.
+V8 deliberately fails on populated accounts without real phone values; no database
+or volume was reset in this session. Branch rules and remote workflow runs remain
+repository administration/runner checks.
+
+Executed from the repository root:
+
+- `mvn -B test`: application and test compilation passed; the full suite could not
+  complete successfully because Docker Desktop's Linux-engine pipe was absent.
+  It also exposed three fixture/configuration failures, subsequently corrected.
+- `mvn -B '-Dtest=U_*Tests' test`: 48 tests passed after those corrections.
+- `mvn -B '-Dtest=U_ProtectionTests' test`: 10 passed after final readability edits;
+  all integration-test sources compiled, including the new database/HTTP cases.
+- `python -m unittest discover -s infrastructure -p test_release.py`: 5 passed.
+- `python infrastructure/check_version.py`: passed (`0.0.1-SNAPSHOT`).
+- `python infrastructure/check.py`: all six Compose variants passed with host
+  plugin access. The sandbox-only invocation could not locate Compose correctly.
+- `python simulation/check.py`: 9 tests, 2 existing skips, otherwise passed.
+- `git diff --check`: passed.
+
+`docker info` confirmed the engine was unavailable, including outside the sandbox.
+Therefore PostgreSQL migration/Hibernate validation, database-backed API regressions,
+image build, live simulation and disposable acceptance remain unverified. Do not
+interpret the passing unit/MVC checks as end-to-end verification. Re-run the full
+suite and the existing image/acceptance flow once Docker Linux containers is running.
+No release tag, publication, deployment, or remote branch-rules change was made.

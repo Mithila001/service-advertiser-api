@@ -32,7 +32,7 @@ public class BusinessDiscoveryController {
     })
     @GetMapping
     public PageResponse<BusinessResponse> search(
-            @Parameter(description = "Case-insensitive business name substring; trimmed, maximum 150 characters. No wildcard matching.")
+            @Parameter(description = "Case-insensitive business name or description substring; trimmed, maximum 150 characters. No wildcard matching.")
             @RequestParam(required = false) String q,
             @Parameter(description = "Matches any selected category. Use unique, positive catalog IDs, comma-separated or repeated. Omit for all categories.")
             @RequestParam(required = false) List<Integer> categoryIds,

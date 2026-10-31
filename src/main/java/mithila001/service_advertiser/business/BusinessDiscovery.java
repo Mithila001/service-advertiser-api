@@ -18,7 +18,11 @@ final class BusinessDiscovery {
         return (root, query, cb) -> {
             var predicates = new java.util.ArrayList<Predicate>();
             predicates.add(cb.equal(root.<BusinessStatus>get("status"), BusinessStatus.ACTIVE));
-            if (!text.isEmpty()) predicates.add(cb.like(cb.lower(root.get("name")), SearchText.likePattern(text), '\\'));
+            if (!text.isEmpty()) {
+                String pattern = SearchText.likePattern(text);
+                predicates.add(cb.or(cb.like(cb.lower(root.get("name")), pattern, '\\'),
+                        cb.like(cb.lower(root.get("description")), pattern, '\\')));
+            }
             if (cityId != null) predicates.add(cb.equal(root.get("cityCatalogEntry").get("id"), cityId));
             if (districtId != null) predicates.add(cb.equal(root.get("cityCatalogEntry").get("district").get("id"), districtId));
             if (provinceId != null) predicates.add(cb.equal(root.get("cityCatalogEntry").get("district").get("province").get("id"), provinceId));

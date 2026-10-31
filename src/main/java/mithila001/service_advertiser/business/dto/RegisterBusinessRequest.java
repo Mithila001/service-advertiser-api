@@ -5,7 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 @Schema(description = "Register one business. uniqueName is immutable and uses 3 to 50 lowercase ASCII letters, digits, or underscores.",
-        example = "{\"uniqueName\":\"colombo_services\",\"information\":{\"name\":\"Colombo Services\",\"cityId\":1,\"categoryIds\":[]}}")
+        example = "{\"uniqueName\":\"colombo_services\",\"information\":{\"name\":\"Colombo Services\",\"addressLine1\":\"123 Main Street\",\"cityId\":1,\"categoryIds\":[]}}")
 public record RegisterBusinessRequest(
         @NotNull @Pattern(regexp = "[a-z0-9_]{3,50}") String uniqueName,
         @NotNull @Valid BusinessInformationRequest information) {}

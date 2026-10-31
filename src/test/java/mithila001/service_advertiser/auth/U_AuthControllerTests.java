@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,19 +44,20 @@ class U_AuthControllerTests {
     void publicRegistrationReturnsCreatedResponseWithoutPassword() throws Exception {
         when(registrationService.register(any(RegisterRequest.class))).thenReturn(
                 new RegisterResponse(7L, "Test User", "test@example.com", UserRole.CUSTOMER,
-                        LocalDateTime.parse("2026-10-15T15:00:00")));
+                        Instant.parse("2026-10-15T15:00:00Z")));
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Test User","email":"test@example.com","password":"SecurePass123!"}
+                                {"name":"Test User","email":"test@example.com","password":"SecurePass123!","phone":"+94771234567"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(7))
                 .andExpect(jsonPath("$.name").value("Test User"))
                 .andExpect(jsonPath("$.email").value("test@example.com"))
                 .andExpect(jsonPath("$.role").value("CUSTOMER"))
-                .andExpect(jsonPath("$.createdAt").value("2026-10-15T15:00:00"))
+                .andExpect(jsonPath("$.createdAt").value("2026-10-15T15:00:00Z"))
+                .andExpect(jsonPath("$.phone").doesNotExist())
                 .andExpect(jsonPath("$.password").doesNotExist())
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
 
@@ -68,7 +69,7 @@ class U_AuthControllerTests {
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Test User","email":"bad-email","password":"SecurePass123!"}
+                                {"name":"Test User","email":"bad-email","password":"SecurePass123!","phone":"+94771234567"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.email").value("Must be a valid email address"));
@@ -92,10 +93,22 @@ class U_AuthControllerTests {
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Test User","email":"test@example.com","password":"SecurePass123!"}
+                                {"name":"Test User","email":"test@example.com","password":"SecurePass123!","phone":"+94771234567"}
                                 """))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Email is already registered"));
+    }
+
+    @Test
+    void rejectsInvalidPhoneAndUnknownFields() throws Exception {
+        for (String extra : new String[] {"", ",\"phone\":null", ",\"phone\":\" \"",
+                ",\"phone\":\"abc123\"", ",\"phone\":\"123456\"",
+                ",\"phone\":\"1234567890123456\"", ",\"phone\":\"+94771234567\",\"typo\":true"}) {
+            mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"name\":\"Test\",\"email\":\"test@example.com\",\"password\":\"SecurePass123!\"" + extra + "}"))
+                    .andExpect(status().isBadRequest());
+        }
+        org.mockito.Mockito.verifyNoInteractions(registrationService);
     }
 
     @Test

@@ -1,7 +1,7 @@
 package mithila001.service_advertiser.business;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -68,7 +68,7 @@ public class BusinessModerationService {
         if (business.getStatus() != expected) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Business is not " + expected.name().toLowerCase());
         }
-        LocalDateTime now = LocalDateTime.now(clock);
+        Instant now = clock.instant();
         if (action == BusinessModerationAction.SUSPENDED) business.suspend(now);
         else business.activate(now);
         history.save(new BusinessModerationEvent(business, admin, action,

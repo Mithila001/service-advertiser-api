@@ -1,9 +1,13 @@
 package mithila001.service_advertiser.config;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HexFormat;
+import java.util.Locale;
+import java.util.Map;
 import java.time.Duration;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import io.github.bucket4j.*;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.TimeMeter;
 import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -16,14 +20,21 @@ public class RateLimiter {
     private record Key(String policy, String ip, String account) {}
     private record Entry(Bucket bucket, long touched, long ttl) {}
     @org.springframework.beans.factory.annotation.Autowired
-    public RateLimiter(ProtectionProperties properties) { this(properties, TimeMeter.SYSTEM_NANOTIME); }
-    RateLimiter(ProtectionProperties properties, TimeMeter time) { this.properties = properties; this.time = time; }
+    public RateLimiter(ProtectionProperties properties) {
+        this(properties, TimeMeter.SYSTEM_NANOTIME);
+    }
+    RateLimiter(ProtectionProperties properties, TimeMeter time) {
+        this.properties = properties;
+        this.time = time;
+    }
     public void login(String email, String ip) {
         try {
             String normalized = email.trim().toLowerCase(Locale.ROOT);
             String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(normalized.getBytes(StandardCharsets.UTF_8)));
             check("login-account-ip", ip, digest, properties.rateLimit().loginAccountIp());
-        } catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+        } catch (java.security.NoSuchAlgorithmException exception) {
+            throw new IllegalStateException(exception);
+        }
     }
     public void ip(String route, String ip) {
         var limits = properties.rateLimit();
@@ -36,19 +47,32 @@ public class RateLimiter {
     }
     // ponytail: one lock and <=10,000 buckets; use per-key coordination if contention becomes measurable.
     private synchronized void check(String policy, String ip, String account, ProtectionProperties.Policy limit) {
-        if (!properties.rateLimit().enabled()) return;
+        if (!properties.rateLimit().enabled()) {
+            return;
+        }
         long now = time.currentTimeNanos();
         Key key = new Key(policy, ip, account);
         Entry entry = entries.get(key);
         if (entry == null) {
-            if (entries.size() >= 10000) cleanup();
-            if (entries.size() >= 10000) throw new Rejected(503, 60, policy);
-            entry = new Entry(Bucket.builder().withCustomTimePrecision(time).addLimit(b -> b.capacity(limit.capacity()).refillGreedy(limit.capacity(), limit.period())).build(), now,
-                    Math.max(Duration.ofMinutes(15).toNanos(), limit.period().toNanos()));
+            if (entries.size() >= 10000) {
+                cleanup();
+            }
+            if (entries.size() >= 10000) {
+                throw new Rejected(503, 60, policy);
+            }
+            Bucket bucket = Bucket.builder().withCustomTimePrecision(time)
+                    .addLimit(bandwidth -> bandwidth.capacity(limit.capacity())
+                            .refillGreedy(limit.capacity(), limit.period()))
+                    .build();
+            long idleTtl = Math.max(Duration.ofMinutes(15).toNanos(), limit.period().toNanos());
+            entry = new Entry(bucket, now, idleTtl);
         }
         entries.put(key, new Entry(entry.bucket(), now, entry.ttl()));
         var probe = entry.bucket().tryConsumeAndReturnRemaining(1);
-        if (!probe.isConsumed()) throw new Rejected(429, Math.max(1, (probe.getNanosToWaitForRefill() - 1) / 1000000000 + 1), policy);
+        if (!probe.isConsumed()) {
+            long retrySeconds = Math.max(1, (probe.getNanosToWaitForRefill() - 1) / 1000000000 + 1);
+            throw new Rejected(429, retrySeconds, policy);
+        }
     }
     @Scheduled(fixedDelay = 60000)
     public synchronized void cleanup() {
@@ -56,7 +80,14 @@ public class RateLimiter {
         entries.values().removeIf(e -> now - e.touched() >= e.ttl());
     }
     public static class Rejected extends RuntimeException {
-        public final int status; public final long retry; public final String policy;
-        Rejected(int status, long retry, String policy) { super("Request admission rejected"); this.status=status; this.retry=retry; this.policy=policy; }
+        public final int status;
+        public final long retry;
+        public final String policy;
+        Rejected(int status, long retry, String policy) {
+            super("Request admission rejected");
+            this.status = status;
+            this.retry = retry;
+            this.policy = policy;
+        }
     }
 }

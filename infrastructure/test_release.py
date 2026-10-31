@@ -55,22 +55,6 @@ class ReleaseChecks(unittest.TestCase):
             git('checkout', '--detach', sha)
             self.assertEqual(validate_tag('1.2.3', 'v1.2.3', root), sha)
 
-    def test_ci_proof(self):
-        good = dict(head_sha='abc', head_branch='main', event='push', status='completed',
-                    conclusion='success', name='Verify', path='.github/workflows/verify.yaml',
-                    html_url='https://example.invalid/run')
-        with patch.object(release, 'pages', return_value=[{'workflow_runs': []},
-                                                         {'workflow_runs': [good]}]):
-            self.assertEqual(release.successful_verify('owner/repo', 'abc'), good['html_url'])
-        for field, value in [('head_sha', 'other'), ('head_branch', 'feature'),
-                             ('event', 'pull_request'), ('status', 'in_progress'),
-                             ('conclusion', 'failure'), ('name', 'Other'), ('path', 'other.yaml')]:
-            with self.subTest(field=field), patch.object(release, 'pages', return_value=[
-                    {'workflow_runs': [{**good, field: value}]}]), self.assertRaises(ValueError):
-                release.successful_verify('owner/repo', 'abc')
-        with patch.object(release, 'pages', return_value=[{'workflow_runs': []}]), self.assertRaises(ValueError):
-            release.successful_verify('owner/repo', 'abc')
-
     def test_release_state_and_api_errors(self):
         draft = dict(tag_name='v1.2.3', draft=True, html_url='https://example.invalid/draft')
         for records, expected in [([], None), ([draft], draft['html_url'])]:
@@ -80,10 +64,8 @@ class ReleaseChecks(unittest.TestCase):
             with patch.object(release, 'pages', return_value=[records]), self.assertRaises(ValueError):
                 release.existing_draft('owner/repo', 'v1.2.3')
         with patch.object(release, 'gh', side_effect=subprocess.CalledProcessError(1, 'gh')):
-            for check in [lambda: release.existing_draft('owner/repo', 'v1.2.3'),
-                          lambda: release.successful_verify('owner/repo', 'abc')]:
-                with self.assertRaises(subprocess.CalledProcessError):
-                    check()
+            with self.assertRaises(subprocess.CalledProcessError):
+                release.existing_draft('owner/repo', 'v1.2.3')
 
     def test_draft_rerun_preserves_notes(self):
         with patch('sys.argv', ['release.py', 'draft']), patch.dict('os.environ', {

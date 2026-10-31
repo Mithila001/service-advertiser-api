@@ -16,7 +16,6 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
-      actions: read
     outputs:
       commit: ${{ steps.source.outputs.commit }}
     steps:
@@ -29,7 +28,7 @@ jobs:
         run: |
           python3 infrastructure/check_version.py --tag "$RELEASE_TAG"
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Require prior CI and unpublished release
+      - name: Require matching source and unpublished release
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 infrastructure/release.py verify
@@ -37,6 +36,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: maven
+      - name: Verify tagged source
+        run: |
+          python3 -m unittest discover -s infrastructure -p test_release.py
+          mvn -B test
       - name: Container-native configuration checks
         run: python3 infrastructure/check.py --containers
       - name: Build temporary application image
@@ -53,6 +57,7 @@ jobs:
           name: release-acceptance-reports
           retention-days: 7
           path: |
+            target/surefire-reports/
             target/infrastructure-acceptance.json
             target/acceptance-*.log
             target/phase1_*.csv

@@ -29,8 +29,7 @@ class U_BusinessServiceTests {
     BusinessService service;
     User user;
     final Clock clock = Clock.fixed(Instant.parse("2026-10-17T10:00:00Z"), ZoneOffset.UTC);
-    final BusinessInformationRequest info = new BusinessInformationRequest("Display", null, null, null, null,
-            null, null, 1, null, null, null, null, null);
+    final BusinessInformationRequest info = new BusinessInformationRequest("Display", null, null, null, null, "123 Main Street", null, 1, null, null, null, null, null);
 
     @BeforeEach
     void setup() {
@@ -68,7 +67,7 @@ class U_BusinessServiceTests {
         assertSame(provider, user.getRole());
         assertEquals(BusinessStatus.ACTIVE, result.status());
         assertEquals("test_business", result.uniqueName());
-        assertEquals(LocalDateTime.now(clock), result.createdAt());
+        assertEquals(clock.instant(), result.createdAt());
     }
 
     @Test
@@ -96,11 +95,11 @@ class U_BusinessServiceTests {
     @Test
     void updatesOnlyOwnedBusinessAndDeletesAfterClearingForeignKey() {
         user.setBusinessId(7);
-        Business business = new Business("immutable_name", info, city, LocalDateTime.now(clock).minusDays(1));
+        Business business = new Business("immutable_name", info, city, clock.instant().minus(java.time.Duration.ofDays(1)));
         when(businesses.findForUpdate(7)).thenReturn(Optional.of(business));
         BusinessResponse result = service.update(1L, info);
         assertEquals("immutable_name", result.uniqueName());
-        assertEquals(LocalDateTime.now(clock), result.updatedAt());
+        assertEquals(clock.instant(), result.updatedAt());
         Role customer = role(UserRole.CUSTOMER);
         when(roles.findByName(UserRole.CUSTOMER)).thenReturn(Optional.of(customer));
         doAnswer(call -> {

@@ -1,6 +1,6 @@
 package mithila001.service_advertiser.auth;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Locale;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,14 +23,16 @@ public class RegistrationService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final java.time.Clock clock;
 
     public RegistrationService(
             UserRepository userRepository,
             RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder, java.time.Clock clock) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
     }
 
     @Transactional
@@ -43,10 +45,11 @@ public class RegistrationService {
         Role customerRole = roleRepository.findByName(UserRole.CUSTOMER)
                 .orElseThrow(RoleNotFoundException::new);
 
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = clock.instant();
         User user = new User();
         user.setName(request.name());
         user.setEmail(email);
+        user.setPhone(request.phone());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setStatus(UserStatus.ACTIVE);
         user.setRole(customerRole);

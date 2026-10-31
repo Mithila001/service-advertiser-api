@@ -17,7 +17,7 @@ def probe():
     from locustfile import transport_for
     api = Api(HttpTransport())
     account = {'email': 'clock_probe@example.test', 'password': 'Synthetic_clock_probe_1!'}
-    api.call('POST', '/api/v1/auth/register', {'name': 'Clock Probe', **account}, expected=(201,))
+    api.call('POST', '/api/v1/auth/register', {'name': 'Clock Probe', **account, 'phone': '+94771234567'}, expected=(201,))
     api = Api(transport_for(Environment(host=BASE_URL)))
     for attempt in range(2000):
         api.login(account)

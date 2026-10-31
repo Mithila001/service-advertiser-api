@@ -139,7 +139,7 @@ class U_RequestLoggingTests {
         when(businesses.register(any(), any())).thenThrow(new org.springframework.transaction.TransactionSystemException("Commit failed"));
         mvc.perform(post("/api/v1/businesses").with(jwt().jwt(j -> j.subject("7")))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"uniqueName\":\"test_business\",\"information\":{\"name\":\"Test\",\"cityId\":1}}"))
+                        .content("{\"uniqueName\":\"test_business\",\"information\":{\"name\":\"Test\",\"addressLine1\":\"123 Main Street\",\"cityId\":1}}"))
                 .andExpect(status().isInternalServerError());
         assertTrue(events("business_registered").isEmpty());
         assertTrue(capture.list.stream().noneMatch(e -> e.getFormattedMessage().contains("secret-")));
@@ -161,7 +161,7 @@ class U_RequestLoggingTests {
         when(moderation.activate(any(), any(), any())).thenReturn(business);
         mvc.perform(post("/api/v1/businesses").with(jwt().jwt(j -> j.subject("7")))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"uniqueName\":\"test_business\",\"information\":{\"name\":\"Test\",\"cityId\":1}}"))
+                        .content("{\"uniqueName\":\"test_business\",\"information\":{\"name\":\"Test\",\"addressLine1\":\"123 Main Street\",\"cityId\":1}}"))
                 .andExpect(status().isCreated());
         mvc.perform(delete("/api/v1/businesses/me").with(jwt().jwt(j -> j.subject("7"))))
                 .andExpect(status().isNoContent());

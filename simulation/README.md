@@ -234,3 +234,11 @@ Metrics scrape every 15 seconds; monitoring overhead affects benchmark results.
 Resettable synthetic datasets and repeatability take priority over production parity.
 Do not load real data or external credentials or expose the loopback ports publicly.
 See [verification and Phase 2](../infrastructure/verification.md) for measured runs.
+
+Account registration now requires a private phone; first-party synthetic clients
+supply a formatted test phone explicitly. Business creation/replacement requires
+`addressLine1`. Public business phone remains optional and independent.
+V8 requires real phone/address values for existing data; use only the documented
+disposable database reset procedures when discarding development/simulation data.
+Simulation database and manifest must be reset together. Never reset deployment
+volumes to apply this schema change. Event timestamps now include UTC `Z`.

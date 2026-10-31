@@ -47,7 +47,7 @@ class U_RegistrationServiceTests {
 
     @BeforeEach
     void setUp() {
-        registrationService = new RegistrationService(userRepository, roleRepository, passwordEncoder);
+        registrationService = new RegistrationService(userRepository, roleRepository, passwordEncoder, java.time.Clock.systemUTC());
     }
 
     @Test
@@ -63,12 +63,13 @@ class U_RegistrationServiceTests {
         });
 
         RegisterResponse response = registrationService.register(
-                new RegisterRequest("Test User", "  Test@Example.COM  ", "SecurePass123!"));
+                new RegisterRequest("Test User", "  Test@Example.COM  ", "SecurePass123!", "+94771234567"));
 
         ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(savedUser.capture());
         User user = savedUser.getValue();
         assertEquals("test@example.com", user.getEmail());
+        assertEquals("+94771234567", user.getPhone());
         assertEquals("$2b$test-hash", user.getPasswordHash());
         assertEquals(UserRole.CUSTOMER, user.getRole().getName());
         assertEquals(UserStatus.ACTIVE, user.getStatus());
@@ -88,7 +89,7 @@ class U_RegistrationServiceTests {
         when(userRepository.existsByEmail("test@example.com")).thenReturn(true);
 
         assertThrows(DuplicateEmailException.class, () -> registrationService.register(
-                new RegisterRequest("Test User", "Test@Example.com", "SecurePass123!")));
+                new RegisterRequest("Test User", "Test@Example.com", "SecurePass123!", "+94771234567")));
 
         verify(roleRepository, never()).findByName(any());
         verify(passwordEncoder, never()).encode(any());
@@ -101,7 +102,7 @@ class U_RegistrationServiceTests {
         when(roleRepository.findByName(UserRole.CUSTOMER)).thenReturn(Optional.empty());
 
         assertThrows(RoleNotFoundException.class, () -> registrationService.register(
-                new RegisterRequest("Test User", "test@example.com", "SecurePass123!")));
+                new RegisterRequest("Test User", "test@example.com", "SecurePass123!", "+94771234567")));
 
         verify(passwordEncoder, never()).encode(any());
         verify(userRepository, never()).save(any());

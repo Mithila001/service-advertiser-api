@@ -102,7 +102,7 @@ class U_ProtectionTests {
     @Test void validationReportsPasswordAndDescriptionFields() {
         try (var factory = jakarta.validation.Validation.buildDefaultValidatorFactory()) {
             var validator = factory.getValidator();
-            var registration = new mithila001.service_advertiser.auth.dto.RegisterRequest("User", "user@example.com", "a".repeat(73));
+            var registration = new mithila001.service_advertiser.auth.dto.RegisterRequest("User", "user@example.com", "a".repeat(73), "+94771234567");
             assertTrue(validator.validate(registration).stream().anyMatch(v -> v.getPropertyPath().toString().equals("password")));
             var item = new mithila001.service_advertiser.item.dto.CreateItemRequest("Title", "x".repeat(10001), mithila001.service_advertiser.item.ItemType.SERVICE, null);
             assertTrue(validator.validate(item).stream().anyMatch(v -> v.getPropertyPath().toString().equals("description")));

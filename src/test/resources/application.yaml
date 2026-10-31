@@ -11,6 +11,9 @@ app:
     refresh-lifetime: 7d
 
 spring:
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
   profiles:
     active: test
   jpa:

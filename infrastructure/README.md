@@ -146,3 +146,11 @@ the existing bounded policy. Monitor disk with `docker system df -v` and free sp
 Use standard datasource settings for managed PostgreSQL; keep TLS verification
 enabled for external databases. Application code contains no cloud provider API.
 There is no Kubernetes, Vault, tracing stack, automatic deployment or load balancer.
+
+Account registration now requires a private phone; first-party synthetic clients
+supply a formatted test phone explicitly. Business creation/replacement requires
+`addressLine1`. Public business phone remains optional and independent.
+V8 requires real phone/address values for existing data; use only the documented
+disposable database reset procedures when discarding development/simulation data.
+Simulation database and manifest must be reset together. Never reset deployment
+volumes to apply this schema change. Event timestamps now include UTC `Z`.
